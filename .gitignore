@@ -1,0 +1,38 @@
+#--- JAVA / BACKEND ---
+target/
+out/
+*.class
+*.log
+*.log.*
+
+#--- IDEs & CONFIGS ---
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.classpath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+#--- MAVEN ---
+.mvn/wrapper/maven-wrapper.jar
+
+#--- FRONTEND (Node.js/React) ---
+#Essencial para não travar Git
+node_modules/
+npm-debug.log
+yarn-error.log
+#Pastas de build do frontend
+dist/
+build/
+
+#--- SISTEMA OPERACIONAL ---
+.DS_Store
+Thumbs.db
+
+#--- SEGURANÇA ---
+#Variáveis de ambiente
+.env
