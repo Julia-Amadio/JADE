@@ -34,13 +34,13 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(name = "pswd_hash", nullable = false) //'name' diz qual é a coluna no banco
+    @Column(name = "pswd_hash", nullable = false, length = 255) //'name' diz qual é a coluna no banco
     private String passwordHash;
 
     @Column(name = "created_at", updatable = false)

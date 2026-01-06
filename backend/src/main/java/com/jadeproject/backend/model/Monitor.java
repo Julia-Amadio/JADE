@@ -22,10 +22,10 @@ public class Monitor {
     @JoinColumn(name ="user_id", nullable = false) //Mapeia a coluna FK 'user_id'
     private User user;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     private String url;
 
     //No SQL a coluna é 'interval_seconds', então mapeamos o nome
