@@ -18,4 +18,7 @@ public interface MonitorRepository extends JpaRepository<Monitor, Long>{
 
     //Buscar monitor por URL (útil para validações)
     Optional<Monitor> findByUrl(String url);
+
+    //Verifica se existe um monitor com este NOME pertencente a este USER_ID
+    boolean existsByNameAndUserId(String name, Long userId);
 }
