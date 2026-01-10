@@ -32,6 +32,8 @@ public class IncidentService {
             Incident newIncident = new Incident();
             newIncident.setMonitor(monitor);
             newIncident.setStatus("OPEN");
+            newIncident.setSeverity("HIGH"); //ou "CRITICAL"
+            newIncident.setTitle("Monitor Down: " + monitor.getName());
             newIncident.setCreatedAt(LocalDateTime.now());
             newIncident.setDescription(errorReason); //ex.: "Timeout", "404 Not Found"
 
