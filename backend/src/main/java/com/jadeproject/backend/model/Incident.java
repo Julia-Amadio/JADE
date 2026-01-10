@@ -36,8 +36,11 @@ public class Incident {
     @Column(length = 20)
     private String status;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "ended_at")
+    private LocalDateTime endedAt;
 
     @PrePersist
     protected void onCreate() {
