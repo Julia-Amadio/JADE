@@ -30,6 +30,10 @@ public class MonitorService {
         //2. Validar regra de negócio: nome único (escopo do usuário)
         boolean nameAlreadyExists = monitorRepository.existsByNameAndUserId(monitor.getName(), userId);
 
+        if (nameAlreadyExists) {
+            throw new RuntimeException("[ERRO] Você já possui um monitor chamado '" + monitor.getName() + "'.");
+        }
+
         //3. Vincular monitor ao usuário
         monitor.setUser(user);
 
