@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "monitors")
@@ -20,6 +21,10 @@ public class Monitor {
     //Vários monitores pertencem a um usuário
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name ="user_id", nullable = false) //Mapeia a coluna FK 'user_id'
+    /* Como classes User e Monitor estão relacionadas (um User tem lista de Monitores, e Monitor tem um User), ao transformar isso em JSON,
+    * o Spring pode fazer: User -> Mostra Monitores -> Mostra User -> Mostra Monitores... (StackOverflowError).
+    * Com @JsonIgnore, quando o spring for transformar Monitor em JSON, ele não mostra o objeto User inteiro dentro do corpo.*/
+    @JsonIgnore
     private User user;
 
     @Column(nullable = false, length = 100)
