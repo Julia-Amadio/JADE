@@ -25,6 +25,11 @@ public class MonitorHistoryService {
         log.setStatusCode(statusCode);
         log.setLatency((int) responseTimeMs);
         log.setCheckedAt(LocalDateTime.now());
+
+        //Verifica: o status é maior/igual a 200 E menor que 300?
+        boolean isSuccess = statusCode >= 200 && statusCode < 300;
+        log.setIsSuccessful(isSuccess);
+        
         historyRepository.save(log);
     }
 
