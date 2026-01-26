@@ -13,11 +13,13 @@ public interface MonitorRepository extends JpaRepository<Monitor, Long>{
     //SELECT * FROM monitors WHERE user_id = ?
     List<Monitor> findByUserId(Long userId);
 
-    //Para evitar que o mesmo usuário cadastre a mesma URL duas vezes (opcional)
-    boolean existsByUrl(String url);
-
     //Buscar monitor por URL (útil para validações)
-    Optional<Monitor> findByUrl(String url);
+    //Agora considera duplicidade entre diferentes usuários
+    List<Monitor> findByUrl(String url);
+
+    //Verifica se existe um monitor com esta URL pertencente a este USER_ID -- CORRIGIDO
+    //Dois users podem monitorar uma mesma URL, mas o user não pode ter mais de um monitor com a mesma URL
+    boolean existsByUrlAndUserId(String url, Long userId);
 
     //Verifica se existe um monitor com este NOME pertencente a este USER_ID
     boolean existsByNameAndUserId(String name, Long userId);

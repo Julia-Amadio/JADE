@@ -29,15 +29,20 @@ public class MonitorService {
 
         //2. Validar regra de negócio: nome único (escopo do usuário)
         boolean nameAlreadyExists = monitorRepository.existsByNameAndUserId(monitor.getName(), userId);
-
         if (nameAlreadyExists) {
             throw new RuntimeException("[ERRO] Você já possui um monitor chamado '" + monitor.getName() + "'.");
         }
 
-        //3. Vincular monitor ao usuário
+        //3. [NOVO] Validar regra de negócio: url do monitor deve ser única (ESCOPO DO USUÁRIO)
+        boolean urlAlreadyExists = monitorRepository.existsByUrlAndUserId(monitor.getUrl(), userId);
+        if (urlAlreadyExists) {
+            throw new RuntimeException("[ERRO] Você já está monitorando a URL '" + monitor.getUrl() + "'.");
+        }
+
+        //4. Vincular monitor ao usuário
         monitor.setUser(user);
 
-        //4. Validar se a URL é válida/formatada corretamente. Possível usar UrlValidator aqui no futuro
+        //5. Validar se a URL é válida/formatada corretamente. Possível usar UrlValidator aqui no futuro
         System.out.println("Criando monitor '" + monitor.getName() + "' para o usuário " + user.getUsername());
         return monitorRepository.save(monitor);
     }
