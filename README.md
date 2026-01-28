@@ -21,9 +21,3 @@ O projeto é construído sobre a arquitetura MVC/Monolítica utilizando Java 21 
 7. **Lombok:** biblioteca Java que se conecta ao editor e ao compilador para automatizar a geração de código repetitivo (boilerplate), mantendo ele limpo. Através de anotações (como ``@Data``), ele cria automaticamente getters, setters, construtores e métodos ``toString()`` em tempo de compilação, reduzindo drasticamente o tamanho dos arquivos de classe.
 8. **Flyway:** configurado para garantir a integridade futura. Atualmente inativo (``enabled=false``) enquanto o banco é moldado manualmente (por meio do SQL Editor do Neon), será responsável por aplicar scripts SQL de migração automaticamente quando o projeto for para produção.
 9. **IntelliJ IDEA (ambiente):** IDE para Java. Além de editar o código, gerencia a estrutura de pastas e, crucialmente, simula o ambiente de produção injetando variáveis de ambiente (senhas e credenciais) de forma segura durante os testes locais.
-
-# Arquitetura e design
-O projeto segue a arquitetura em camadas clássica do Spring Boot (Layered Architecture), garantindo a separação de responsabilidades (SoC) e facilitando a manutenção e escalabilidade.
-
-## Fluxo de dados
-O fluxo de uma requisição segue o padrão unidirecional:
