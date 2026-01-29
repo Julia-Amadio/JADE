@@ -15,7 +15,7 @@ Resultado: o binário final contém métodos que não existem visualmente no có
 
 ## Execução (*runtime*)
 Ao iniciar a aplicação (java -jar), o Spring Boot orquestra a inicialização em ordem de dependência:
-1. **Configuração:** leitura do application.properties e injeção de variáveis de ambiente (Senhas/URLs).
+1. **Configuração:** leitura do ``application.properties`` e injeção de variáveis de ambiente (Senhas/URLs).
 2. **Database migration (Flyway):** antes de qualquer lógica de negócio, o Flyway verifica a versão do banco. Se necessário, executa scripts SQL pendentes para alinhar o Schema.
 3. **Validação JPA (Hibernate):** com o banco pronto, o Hibernate inicia. Graças à configuração ``ddl-auto=validate``, ele compara as classes ``@Entity`` com as tabelas reais. Se houver divergência, a aplicação aborta a inicialização (Fail Fast).
 4. **Web Server:** apenas após todas as validações de dados, o Tomcat embutido abre a porta 8080 para receber requisições.
