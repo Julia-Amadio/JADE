@@ -32,7 +32,7 @@ public class DataLoader {
                 User newUser = new User();
                 newUser.setUsername("julia_admin");
                 newUser.setEmail("julia@jade.com");
-                newUser.setPasswordHash("123456"); // Futuro: será hash real
+                newUser.setPasswordHash("123456"); //Futuro: será hash real
 
                 user = userService.registerUser(newUser);
                 System.out.println("Usuário criado: " + user.getUsername());
@@ -41,59 +41,42 @@ public class DataLoader {
                 System.out.println("[ERRO] Usuário '" + user.getUsername() + "' já existe!");
             }
 
-            //2. CRIAR MONITOR
-            //Verifica se o usuário já tem monitores para não duplicar no teste
+            //2. VERIFICAR SE JÁ EXISTEM MONITORES (para não duplicar)
             if (monitorService.findAllByUserId(user.getId()).isEmpty()) {
-                Monitor monitor = new Monitor();
-                monitor.setName("Google Check");
-                monitor.setUrl("https://google.com");
-                monitor.setIntervalSeconds(60);
-                //Setar tipo de URL monitorada no futuro
-                //monitor.setType("HTTP");
+                System.out.println("Criando monitores de teste...");
 
-                //O Service vai vincular ao usuário e validar regras
-                Monitor savedMonitor = monitorService.createMonitor(monitor, user.getId());
-                System.out.println("Monitor criado: " + savedMonitor.getName());
+                //--- MONITOR 1: Google (real) ---
+                createMonitor(monitorService, user, "Google Check", "https://google.com");
 
-                //3. GERAR HISTÓRICO (Simulação)
-                System.out.println("Gerando logs de histórico...");
+                //--- MONITOR 2: fantoche UP (local) ---
+                createMonitor(monitorService, user, "Fantoche - UP", "http://localhost:8080/fantoche/up");
 
-                //No futuro, é correto que Service use 'isUp' internamente para constatar se o site está "em pé" na emissão do log
-                //Simula 3 checks com sucesso (200 OK)
-                historyService.saveLog(savedMonitor, 200, 120/*, true*/);
-                historyService.saveLog(savedMonitor, 200, 115/*, true*/);
-                historyService.saveLog(savedMonitor, 200, 140/*, true*/);
+                //--- MONITOR 3: fantoche DOWN (local) ---
+                createMonitor(monitorService, user, "Fantoche - DOWN", "http://localhost:8080/fantoche/down");
 
-                //Simula 1 falha (500 Error)
-                historyService.saveLog(savedMonitor, 500, 0/*, true*/);
+                //--- MONITOR 4: fantoche SLOW (local) ---
+                createMonitor(monitorService, user, "Fantoche - TIMEOUT", "http://localhost:8080/fantoche/slow");
 
-                System.out.println("[SUCESSO] 4 Logs de histórico gerados.");
+                //--- MONITOR 5: fantoche RANDOM (local) ---
+                createMonitor(monitorService, user, "Fantoche - CAOS", "http://localhost:8080/fantoche/random");
 
-                //4. GERAR INCIDENTE
-                //Simulando que o site caiu
-                System.out.println("Simulando queda do monitor...");
-                incidentService.handleDownEvent(savedMonitor, "Erro 500 - Internal Server Error");
+                System.out.println("Todos os monitores de teste foram criados!");
 
-                //--- PAUSA DE 30 SEGUNDOS ---
-                try {
-                    System.out.println("Aguardando 30 segundos antes de recuperar o sistema...");
-                    System.out.println("Verificar o banco AGORA para ver o status OPEN");
-
-                    Thread.sleep(30000); //30000 milissegundos = 30 segundos
-                } catch (InterruptedException e) {
-                    System.out.println("A pausa foi interrompida!");
-                    Thread.currentThread().interrupt(); //Boa prática: restaurar o estado de interrupção
-                }
-                //----------------------------
-
-                //5. TESTANDO FECHAMENTO
-                incidentService.handleUpEvent(savedMonitor);
-                System.out.println("Verificar o banco AGORA para ver o status RESOLVED");
             } else {
-                System.out.println("O usuário já possui monitores. Pulando criação de dados de teste.");
+                System.out.println("Monitores já existem no banco. Pulando criação.");
             }
 
-            System.out.println("Carga de dados finalizada!");
+            System.out.println("Carga de dados finalizada. O scheduler vai pegar esses dados em breve.");
         };
+    }
+
+    //Método auxiliar para não repetir código
+    private void createMonitor(MonitorService service, User user, String name, String url) {
+        Monitor monitor = new Monitor();
+        monitor.setName(name);
+        monitor.setUrl(url);
+        monitor.setIntervalSeconds(60);
+        service.createMonitor(monitor, user.getId());
+        System.out.println("   -> Monitor cadastrado: " + name);
     }
 }

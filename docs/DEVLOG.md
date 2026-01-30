@@ -92,3 +92,10 @@ O funcionamento técnico segue este ciclo para cada ação (ex: criar monitor):
 4. **Resposta (serialization):**
     - Se o Service processar com sucesso, o Controller recebe o resultado, empacota em um JSON e devolve com Status ``200 OK``.
     - Se o Service lançar um erro, o Controller captura esse erro e devolve uma mensagem apropriada com Status ``400 Bad Request`` ou ``500 Internal Error``.
+
+# <br>27/01 - Scheduler
+O Scheduler é o coração do JADE. Sem ele, o sistema é apenas um cadastro de links. No Spring Boot, a forma mais nativa de fazer tarefas repetitivas é usando a anotação ``@Scheduled``. Foram traçados três passos simples para o mínimo produto viável:
+1. **Habilitar o agendamento:** avisar o Spring que ele deve procurar tarefas agendadas. Isso foi feito por meio da adição da anotação ``@EnableScheduling`` na classe principal;
+2. **Criar o serviço agendador:** a classe MonitorScheduler que acorda a cada X segundos. Por enquanto, ele roda a cada 1 minuto (60000 ms) e apenas imprime no console se o site está UP ou DOWN;
+3. **Lógica do ping:** o código que bate na URL e verifica se é ``200 OK``.
+
