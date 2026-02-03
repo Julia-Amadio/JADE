@@ -99,3 +99,10 @@ O Scheduler é o coração do JADE. Sem ele, o sistema é apenas um cadastro de 
 2. **Criar o serviço agendador:** a classe MonitorScheduler que acorda a cada X segundos. Por enquanto, ele roda a cada 1 minuto (60000 ms) e apenas imprime no console se o site está UP ou DOWN;
 3. **Lógica do ping:** o código que bate na URL e verifica se é ``200 OK``.
 
+# ChaosController
+Visando a condução de testes mais próximos da realidade, foi criado o ``ChaosController.java`` com endpoints que simulam falhas sistêmicas:
+- /up: retorna HTTP ``200 (OK)`` consistentemente;
+- /down: simula falha interna retornando HTTP ``500 (Internal Server Error)``;
+- /slow: simula latência alta. O endpoint aguarda 5s ``(Thread.sleep)``, forçando o MonitorScheduler a disparar um ``SocketTimeoutException``, já que seu limite de leitura é de apenas 3s;
+- /random: alterna aleatoriamente entre status de sucesso e erro para testar a intermitência. 
+O ``DataLoader.java`` também foi alterado de forma que estes endpoints fossem inseridos na tabela ``monitors`` de um usuário existente. Todas as alterações de código feitas para suportar a lógica relacionada à criação deste novo controlador e também do scheduler podem ser visualizadas [neste commit](https://github.com/Julia-Amadio/JADE/commit/6a1955a5fb1b4546b9f1119e0397877f03f4cbea).
