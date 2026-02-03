@@ -34,13 +34,19 @@ public class MonitorScheduler {
         }
 
         for (Monitor monitor: monitors) {
-            boolean isUp = pingUrl(monitor.getUrl());
+            //DIFF: agora recebe o número (ex: 200, 404, 500, 0)
+            int statusCode = pingUrl(monitor.getUrl());
+
+            //Sucesso é entre 200 e 299
+            boolean isUp = statusCode >= 200 && statusCode < 300;
 
             if(isUp) {
-                log.info("^ [UP] {} ({})", monitor.getName(), monitor.getUrl());
+                //Add parâmetro 'statusCode' no log
+                log.info("^ [UP] {} ({}) - Status: {}", monitor.getName(), monitor.getUrl(), statusCode);
             } else {
-                log.error("X [DOWN] {} ({})", monitor.getName(), monitor.getUrl());
-                //Futuro: salvar no banco o Incidente
+                //Se for 0, é erro de conexão (timeout/dns). Se for > 0, é erro HTTP (500, 404)
+                String statusMsg = (statusCode == 0) ? "FALHA DE CONEXÃO" : String.valueOf(statusCode);
+                log.error("X [DOWN] {} ({}) - Status: {}", monitor.getName(), monitor.getUrl(), statusMsg);
             }
         }
 
@@ -48,7 +54,8 @@ public class MonitorScheduler {
     }
 
     //Método auxiliar simples para testar a conexão (java puro)
-    private boolean pingUrl(String urlAddress) {
+    //DIFF: boolean para int
+    private int pingUrl(String urlAddress) {
         try {
             URL url = URI.create(urlAddress).toURL();
 
@@ -59,11 +66,13 @@ public class MonitorScheduler {
 
             int responseCode = connection.getResponseCode();
 
-            //Considera UP se o código for 200 e 299
-            return responseCode >= 200 && responseCode < 300;
+            //Retorna o código real (ex: 200, 404, 500)
+            return connection.getResponseCode();
+
         } catch (Exception e) {
-            //Se der erro de DNS, timeout ou qualquer exceção, considera DOWN
-            return false;
+            //Se der erro de DNS, timeout ou qualquer exceção, não tem código HTTP
+            //Retorna 0 para indicar "sem resposta"
+            return 0;
         }
     }
 }
