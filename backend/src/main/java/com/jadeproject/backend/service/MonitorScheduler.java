@@ -16,14 +16,16 @@ import java.util.List;
 public class MonitorScheduler {
 
     private final MonitorRepository monitorRepository;
+    private final MonitorHistoryService historyService; //DIFF: nova dependência
 
-    //Injeção de dependência via construtor
-    public MonitorScheduler(MonitorRepository monitorRepository){
+    //Injeção de dependência via construtor. DIFF: add o historyService
+    public MonitorScheduler(MonitorRepository monitorRepository,
+                            MonitorHistoryService historyService){
         this.monitorRepository = monitorRepository;
+        this.historyService = historyService;
     }
 
-    //Roda a cada 60 segundos (60000ms) após o término da última execução
-    //Alterando temporariamente para 10seg para testes
+    //Roda a cada 10 segundos (10000ms) após o término da última execução
     @Scheduled(fixedDelay = 10000)
     public void checkMonitors() {
         log.info("------- INICIANDO VERIFICAÇÃO DE MONITORES -------");
@@ -34,19 +36,35 @@ public class MonitorScheduler {
         }
 
         for (Monitor monitor: monitors) {
-            //DIFF: agora recebe o número (ex: 200, 404, 500, 0)
+            //1. Iniciamos o cronômetro
+            long startTime = System.currentTimeMillis();
+
             int statusCode = pingUrl(monitor.getUrl());
+
+            //2. Paramos o cronômetro
+            long endTime = System.currentTimeMillis();
+
+            //Calcula a duração -> latência.
+            int responseTime = (int) (endTime - startTime);
 
             //Sucesso é entre 200 e 299
             boolean isUp = statusCode >= 200 && statusCode < 300;
 
+            //3. Salva no banco de dados
+            //Passa o monitor, o HTTP Status Code, tempo de resposta e se houve sucesso
+            historyService.saveLog(monitor, statusCode, responseTime, isUp);
+
             if(isUp) {
-                //Add parâmetro 'statusCode' no log
-                log.info("^ [UP] {} ({}) - Status: {}", monitor.getName(), monitor.getUrl(), statusCode);
+                //DIFF: add tempo de resposta
+                log.info("^ [UP] {} ({}) - Status: {} - Tempo: {}ms",
+                        monitor.getName(), monitor.getUrl(), statusCode, responseTime);
             } else {
                 //Se for 0, é erro de conexão (timeout/dns). Se for > 0, é erro HTTP (500, 404)
                 String statusMsg = (statusCode == 0) ? "FALHA DE CONEXÃO" : String.valueOf(statusCode);
-                log.error("X [DOWN] {} ({}) - Status: {}", monitor.getName(), monitor.getUrl(), statusMsg);
+                log.error("X [DOWN] {} ({}) - Status: {} - Tempo: {}ms",
+                        monitor.getName(), monitor.getUrl(), statusMsg, responseTime);
+
+                //TODO: chamar aqui o incidentService.handleDownEvent(...)
             }
         }
 
@@ -63,8 +81,6 @@ public class MonitorScheduler {
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(3000); //Espera no máx 3s para conectar
             connection.setReadTimeout(3000);    //Espera no máx 3s para ler
-
-            int responseCode = connection.getResponseCode();
 
             //Retorna o código real (ex: 200, 404, 500)
             return connection.getResponseCode();

@@ -19,11 +19,12 @@ public class MonitorHistoryService {
 
     //Registra uma nova verificação (ping/http check) no banco
     //Quem vai fazer isso no futuro é o scheduler
-    public void saveLog(Monitor monitor, int statusCode, long responseTimeMs) {
+    public void saveLog(Monitor monitor, int statusCode, long responseTimeMs, boolean isUp) {
         MonitorHistory log = new MonitorHistory();
         log.setMonitor(monitor);
         log.setStatusCode(statusCode);
         log.setLatency((int) responseTimeMs);
+        log.setIsSuccessful(isUp);
         log.setCheckedAt(LocalDateTime.now());
 
         //Verifica: o status é maior/igual a 200 E menor que 300?
