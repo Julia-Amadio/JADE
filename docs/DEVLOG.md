@@ -109,5 +109,5 @@ O ``DataLoader.java`` também foi alterado de forma que estes endpoints fossem i
 
 # <br>03/02 - Ajustes no scheduler + lógica de registro dos logs no banco
 Alterações:
-1. Ajustes para que o console exiba o HTTP Status Code nas baterias de testes.
-2. Conexão do scheduler ao BD para que os logs sejam salvos no histórico, além de atualização do método ``saveLog`` no ``MonitorHistoryService.java`` para que ele salve valores na coluna ``is_successful`` no BD.
+1. [Ajustes](https://github.com/Julia-Amadio/JADE/commit/572a898e888269cfc8b8ca1414f8cdf7b21b2273) para que o console exiba o HTTP Status Code nas baterias de testes.
+2. [Conexão do scheduler ao BD](https://github.com/Julia-Amadio/JADE/commit/e93357636bcc867f87452e0c26ae0a6b98786191) para que os logs sejam salvos no histórico, além de atualização do método ``saveLog`` no ``MonitorHistoryService.java`` para que ele salve valores na coluna ``is_successful`` no BD.
