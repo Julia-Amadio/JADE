@@ -111,3 +111,21 @@ O ``DataLoader.java`` também foi alterado de forma que estes endpoints fossem i
 Alterações:
 1. [Ajustes](https://github.com/Julia-Amadio/JADE/commit/572a898e888269cfc8b8ca1414f8cdf7b21b2273) para que o console exiba o HTTP Status Code nas baterias de testes.
 2. [Conexão do scheduler ao BD](https://github.com/Julia-Amadio/JADE/commit/e93357636bcc867f87452e0c26ae0a6b98786191) para que os logs sejam salvos no histórico, além de atualização do método ``saveLog`` no ``MonitorHistoryService.java`` para que ele salve valores na coluna ``is_successful`` no BD.
+
+# <br>04/02 - Gestão de incidentes (alertas)
+Com o registro de logs pronto, o próximo passo lógico é dar inteligência ao monitoramento. 
+
+Se um monitor onde um ping é lançado a cada 10 segundos possui 600 logs de DOWN, não temos 600 problemas, mas sim um problema que durou 1 hora -- assim, temos um INCIDENTE.
+
+Foi implementada a seguinte lógica no scheduler:
+1. UP --> DOWN:
+   - A URL monitorada caiu. 
+   - Verificação: já existe um incidente aberto para esse monitor? 
+   - Não? ABRIR INCIDENTE (Status: OPEN).
+2. DOWN --> DOWN:
+   - A URL continua sem fornecer resposta. 
+   - Fazer nada (ou apenas atualizar o log). O incidente continua OPEN.
+3. DOWN --> UP:
+   - Voltou!
+   - Verificar: Existe um incidente aberto? 
+   - Se sim, FECHAR INCIDENTE (Status: RESOLVED).

@@ -16,13 +16,16 @@ import java.util.List;
 public class MonitorScheduler {
 
     private final MonitorRepository monitorRepository;
-    private final MonitorHistoryService historyService; //DIFF: nova dependência
+    private final MonitorHistoryService historyService;
+    private final IncidentService incidentService; //DIFF: nova dependência
 
-    //Injeção de dependência via construtor. DIFF: add o historyService
+    //Injeção de dependência via construtor. DIFF: add o incidentService
     public MonitorScheduler(MonitorRepository monitorRepository,
-                            MonitorHistoryService historyService){
+                            MonitorHistoryService historyService,
+                            IncidentService incidentService){
         this.monitorRepository = monitorRepository;
         this.historyService = historyService;
+        this.incidentService = incidentService;
     }
 
     //Roda a cada 10 segundos (10000ms) após o término da última execução
@@ -36,35 +39,38 @@ public class MonitorScheduler {
         }
 
         for (Monitor monitor: monitors) {
-            //1. Iniciamos o cronômetro
             long startTime = System.currentTimeMillis();
-
             int statusCode = pingUrl(monitor.getUrl());
-
-            //2. Paramos o cronômetro
             long endTime = System.currentTimeMillis();
 
-            //Calcula a duração -> latência.
             int responseTime = (int) (endTime - startTime);
-
-            //Sucesso é entre 200 e 299
             boolean isUp = statusCode >= 200 && statusCode < 300;
 
-            //3. Salva no banco de dados
+            //Salva no banco de dados
             //Passa o monitor, o HTTP Status Code, tempo de resposta e se houve sucesso
             historyService.saveLog(monitor, statusCode, responseTime, isUp);
 
             if(isUp) {
-                //DIFF: add tempo de resposta
                 log.info("^ [UP] {} ({}) - Status: {} - Tempo: {}ms",
                         monitor.getName(), monitor.getUrl(), statusCode, responseTime);
+
+                //INTEGRAÇÃO: se está UP, tenta resolver incidentes abertos
+                incidentService.handleUpEvent(monitor);
             } else {
                 //Se for 0, é erro de conexão (timeout/dns). Se for > 0, é erro HTTP (500, 404)
                 String statusMsg = (statusCode == 0) ? "FALHA DE CONEXÃO" : String.valueOf(statusCode);
                 log.error("X [DOWN] {} ({}) - Status: {} - Tempo: {}ms",
                         monitor.getName(), monitor.getUrl(), statusMsg, responseTime);
 
-                //TODO: chamar aqui o incidentService.handleDownEvent(...)
+                //INTEGRAÇÃO: Se está DOWN, tenta criar um incidente
+                //Formatamos uma mensagem amigável para a descrição do incidente
+                String errorReason = (statusCode == 0) ? "Timeout ou Erro de DNS" : "Erro HTTP " + statusCode;
+                incidentService.handleDownEvent(monitor, errorReason);
+                /*OPERADOR TERNÁRIO: atalho elegante para escrever 'if-else' em uma única linha
+                * Variavel = (Condição) ? Valor_se_Verdadeiro : Valor_se_Falso;
+                * ? significa "ENTÃO" e : significa "SENÃO"
+                * Se o código for 0 -> Salva "Timeout..."
+                * Se o código for 500 -> "Erro HTTP 500"*/
             }
         }
 
