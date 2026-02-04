@@ -106,3 +106,8 @@ Visando a condução de testes mais próximos da realidade, foi criado o ``Chaos
 - /slow: simula latência alta. O endpoint aguarda 5s ``(Thread.sleep)``, forçando o MonitorScheduler a disparar um ``SocketTimeoutException``, já que seu limite de leitura é de apenas 3s;
 - /random: alterna aleatoriamente entre status de sucesso e erro para testar a intermitência. 
 O ``DataLoader.java`` também foi alterado de forma que estes endpoints fossem inseridos na tabela ``monitors`` de um usuário existente. Todas as alterações de código feitas para suportar a lógica relacionada à criação deste novo controlador e também do scheduler podem ser visualizadas [neste commit](https://github.com/Julia-Amadio/JADE/commit/6a1955a5fb1b4546b9f1119e0397877f03f4cbea).
+
+# <br>03/02 - Ajustes no scheduler + lógica de registro dos logs no banco
+Alterações:
+1. Ajustes para que o console exiba o HTTP Status Code nas baterias de testes.
+2. Conexão do scheduler ao BD para que os logs sejam salvos no histórico, além de atualização do método ``saveLog`` no ``MonitorHistoryService.java`` para que ele salve valores na coluna ``is_successful`` no BD.
