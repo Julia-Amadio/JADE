@@ -3,6 +3,8 @@ package com.jadeproject.backend.service;
 import com.jadeproject.backend.model.Monitor;
 import com.jadeproject.backend.model.MonitorHistory;
 import com.jadeproject.backend.repository.MonitorHistoryRepository;
+import org.springframework.data.domain.PageRequest; //Para solicitar X itens
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,18 +28,16 @@ public class MonitorHistoryService {
         log.setLatency((int) responseTimeMs);
         log.setIsSuccessful(isUp);
         log.setCheckedAt(LocalDateTime.now());
-
-        //Verifica: o status é maior/igual a 200 E menor que 300?
-        boolean isSuccess = statusCode >= 200 && statusCode < 300;
-        log.setIsSuccessful(isSuccess);
-        
         historyRepository.save(log);
     }
 
     //Busca histórico recente para o dashboard
     //Usa método top10 do MonitorHistoryRepository
     public List<MonitorHistory> getRecentLogs(Long monitorId) {
-        return historyRepository.findTop10ByMonitorIdOrderByCheckedAtDesc(monitorId);
+        return historyRepository.findByMonitorId(
+                monitorId,
+                PageRequest.of(0, 10, Sort.by("checkedAt").descending())
+        );
     }
 
     //Histórico completo para relatórios detalhados
