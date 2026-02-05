@@ -27,7 +27,7 @@
    - **description:** texto longo;
    - **status:** 'OPEN', 'RESOLVED'.
 
-A estrutura foi hospedada no [neon.tech](neon.tech) (Postgre) por meio da execução do seguinte script:
+A estrutura foi hospedada no [neon.tech](https://neon.com/) (Postgre) por meio da execução do seguinte script:
 ```SQL
 -- 1. Tabela de usuários
 CREATE TABLE users (
