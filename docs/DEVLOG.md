@@ -1,4 +1,77 @@
-# 06/01 - Camada de Modelo (Package com.jadeproject.backend.model)
+# Estrutura inicial do Banco de Dados
+1. Tabela **users** (quem acessa). Aqui ficam os dados de login.
+   - **id:** (PK) número único ou UUID;
+   - **username:** nome de login;
+   - **email:** para contato;
+   - **pswd_hash:** senha criptografada (nunca salvar senha pura, usar BCrypt);
+   - **created_at:** data de cadastro.
+2. Tabela **monitors** (o que será vigiado). Aqui ficam as URLs que o usuário cadastrou.
+   - **id:** (PK);
+   - **user_id:** (FK) ATENÇAO: esta coluna diz "a quem este monitor pertence". Ela aponta para o id da tabela users;
+   - **name:** apelido (ex: "API de Produção");
+   - **url:** o endereço monitorado;
+   - **interval_seconds:** de quanto em quanto tempo checar (ex: 300 segundos);
+   - **is_active:** boolean para pausar o monitoramento sem deletar.
+3. Tabela **monitor_history** (logs/pings). Aqui o volume de dados cresce. Cada vez que o script rodar e fizer um ping, ele salva uma linha aqui.
+   - **id:** (PK);
+   - **monitor_id:** (FK) aponta para a tabela monitors;
+   - **status_code:** resultado HTTP (200, 404, 500);
+   - **latency_ms:** quanto tempo demorou para a resposta (ex: 120ms);
+   - **checked_at:** data e hora exata da verificação;
+   - **is_successful:** Boolean (facilitador para consultas rápidas de uptime).
+4. Tabela **incidents** (registro manual de problemas). Para a funcionalidade de postmortem.
+   - **id:** (PK);
+   - **user_id:** (FK) quem reportou;
+   - **title:** título do problema;
+   - **severity:** (enum ou Varchar) 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL';
+   - **description:** texto longo;
+   - **status:** 'OPEN', 'RESOLVED'.
+
+A estrutura foi hospedada no [neon.tech](neon.tech) (Postgre) por meio da execução do seguinte script:
+```SQL
+-- 1. Tabela de usuários
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    pswd_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Tabela de monitores
+CREATE TABLE monitors (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    interval_seconds INT DEFAULT 300,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. Tabela de histórico (logs de uptime)
+CREATE TABLE monitor_history (
+    id SERIAL PRIMARY KEY,
+    monitor_id INT NOT NULL REFERENCES monitors(id) ON DELETE CASCADE,
+    status_code INT,
+    latency_ms INT,
+    is_successful BOOLEAN,
+    checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. Tabela de incidentes
+CREATE TABLE incidents (
+    id SERIAL PRIMARY KEY,
+    monitor_id INT NOT NULL REFERENCES monitors(id) ON DELETE CASCADE,
+    title VARCHAR(150) NOT NULL,
+    severity VARCHAR(20) NOT NULL,
+    description TEXT,
+    status VARCHAR(20) DEFAULT 'OPEN',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+# <br>06/01 - Camada de Modelo (Package com.jadeproject.backend.model)
 O pacote ``model`` constitui a camada de domínio da aplicação. Contém as entidades JPA (Java Persistence API), que são classes Java responsáveis por representar a estrutura de dados do sistema e suas regras de integridade. Estas classes desempenham dois papéis fundamentais na arquitetura:
 - **Mapeamento Objeto-Relacional (ORM):** através de anotações (como ``@Entity``, ``@Table``, ``@Column``), estas classes definem como o banco de dados deve ser estruturado. O framework utiliza esses "modelos" para criar e validar automaticamente as tabelas, colunas e chaves estrangeiras no PostgreSQL.
 - **Representação de estado:** durante a execução da aplicação (runtime), estas classes são instanciadas para manipular os dados na memória RAM, transportando informações entre o BD e as camadas de regra de negócio.
@@ -141,3 +214,5 @@ Isso traduz para:
 - 0: forneça a primeira página.
 - 10: forneça pacotes de 10 itens por vez.
 - Sort...: forneça os mais recentes primeiro (decrescente).
+
+*Além das duas alterações citadas anteriormente, foi removida uma pequena redundância em relação ao ``boolean isUp`` dentro do ``MonitorHistoryRepository``.*
