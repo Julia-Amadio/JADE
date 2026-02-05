@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "incidents")
@@ -21,6 +22,7 @@ public class Incident {
     //Um monitor possui vários incidentes
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "monitor_id", nullable = false)
+    @JsonIgnore
     private Monitor monitor;
 
     @Column(nullable = false, length = 150)

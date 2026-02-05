@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "monitor_history")
@@ -21,6 +22,7 @@ public class MonitorHistory {
     //Um monitor possui vários logs
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "monitor_id", nullable = false) //Mapeia a coluna FK 'monitor_id'
+    @JsonIgnore
     private Monitor monitor;
 
     //Não temos 'nullable = false' pois um TimeOut, por exemplo, não retorna status code
