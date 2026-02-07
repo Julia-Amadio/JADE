@@ -216,3 +216,62 @@ Isso traduz para:
 - Sort...: forneça os mais recentes primeiro (decrescente).
 
 *Além das duas alterações citadas anteriormente, foi removida uma pequena redundância em relação ao ``boolean isUp`` dentro do ``MonitorHistoryRepository``.*
+
+# <br>06/02 - Agendamento dinâmico
+Até o momento, o sistema tratava todos os monitores de forma igual ou dependia de uma verificação pesada no histórico. Para permitir que cada monitor tenha seu próprio intervalo de verificação (ex: um crítico a cada 30s, outro a cada 5 min) de forma performática, foi implementada uma estratégia de **"Smart Polling"**.
+
+A ideia central é evitar trazer todos os monitores para a memória ou fazer buscas complexas na tabela gigante de histórico. O próprio registro do monitor deve saber quando foi sua última verificação.
+
+## Alterações na estrutura (BD e ``Model``)
+Foi criada uma coluna de "cache" na tabela principal. Isso permite consultar rapidamente quem está "atrasado" sem precisar fazer joins ou aggregations na tabela de logs.
+
+SQL executado (migração manual):
+```SQL
+ALTER TABLE monitors ADD COLUMN last_checked TIMESTAMP;
+```
+No Model (``Monitor.java``):
+```java
+@Column(name = "last_checked")
+private OffsetDateTime lastChecked;
+```
+
+## Query inteligente (``Repository``)
+Ao invés de verificar datas no Java, delegamos o filtro para o Banco de Dados. No ``MonitorRepository``, foi criada uma *Native Query* que utiliza funções de tempo do PostgreSQL para calcular o próximo disparo de ping.
+A query retorna apenas os monitores onde:
+1. Nunca rodaram (``last_checked IS NULL``); OU
+2. O tempo atual já ultrapassou o agendamento (``last_checked + interval_seconds``).
+```java
+@Query(value = "SELECT * FROM monitors WHERE last_checked IS NULL OR (last_checked + make_interval(secs => interval_seconds)) < CURRENT_TIMESTAMP", nativeQuery = true)
+List<Monitor> findMonitorsToProcess();
+```
+
+## Refatoração do Scheduler
+O ``MonitorScheduler`` deixou de ser um simples laço cego. O fluxo agora é transacional em relação ao tempo:
+1. Busca apenas os monitores pendentes (via query acima);
+2. Executa o ping e salva o histórico/incidentes;
+3. Atualiza o ``lastChecked`` do monitor para ``OffsetDateTime.now(ZoneOffset.UTC)`` e salva.
+Isso garante que ele só será pego pela query novamente quando o intervalo definido pelo usuário passar.
+
+## Regras de negócio (``Service``)
+Para evitar abuso do sistema ou problemas de performance (ex: usuário configurando intervalo de 1 segundo), foi estabelecida uma regra de validação no momento da criação do monitor.
+
+No ``MonitorService``, garantimos um hard limit:
+```java
+if (monitor.getIntervalSeconds() < 30) {
+    throw new RuntimeException("O intervalo mínimo é de 30 segundos.");
+}
+```
+O valor padrão (default) permanece 300 segundos (5 minutos) caso o campo venha nulo, conforme estabelecido no ``Model`` e na estrutura do BD.
+
+## Refatoração: migração para UTC (timezone)
+Durante a validação da arquitetura para o deploy (futuro uso no Render/AWS), identificou-se uma dívida técnica crítica relacionada ao controle de tempo. O uso de ``LocalDateTime`` atrela a aplicação ao relógio local do servidor.
+Em ambientes Cloud (serverless/containers), os servidores geralmente operam em UTC, enquanto o ambiente de desenvolvimento local opera em UTC-3 (Brasília). Isso causaria:
+1. **Falha no Scheduler:** a query SQL poderia ignorar monitores ou executá-los em horários errados ao comparar o ``NOW()`` do banco (UTC) com o horário salvo pelo Java (local).
+2. **Inconsistência de dados:** incidentes poderiam ter durações negativas ou logs aparecerem no "futuro" dependendo do fuso horário do visualizador.
+
+**A solução:** foi realizada a migração completa do padrão de datas da aplicação para UTC (OffsetDateTime).
+1. **Models (``Monitor``, ``MonitorHistory``, ``Incident``, ``User``):** substituição de ``LocalDateTime`` por ``OffsetDateTime``. Agora, toda data salva no banco carrega explicitamente o carimbo Z (Zulu Time/UTC).
+2. **Services:** ajuste na criação de objetos para usar ``OffsetDateTime.now(ZoneOffset.UTC)``, garantindo que a aplicação seja a fonte da verdade sobre o fuso, independente da configuração do SO do servidor.
+3. **Native query (``MonitorRepository``):** atualização da query do scheduler. Substituição do ``NOW()`` genérico por ``CURRENT_TIMESTAMP``, permitindo que o PostgreSQL (operando com colunas ``TIMESTAMPTZ``) faça a aritmética correta entre o último checagem e o intervalo definido, respeitando o offset de tempo.
+
+*Todas as atualizações mencionadas nesta seção podem ser visualizadas [neste commit](https://github.com/Julia-Amadio/JADE/commit/2f0f900788534735069dd6b965810fa14fd433c5).*
