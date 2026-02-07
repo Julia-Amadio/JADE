@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 @Service
 public class MonitorHistoryService {
@@ -27,7 +29,7 @@ public class MonitorHistoryService {
         log.setStatusCode(statusCode);
         log.setLatency((int) responseTimeMs);
         log.setIsSuccessful(isUp);
-        log.setCheckedAt(LocalDateTime.now());
+        log.setCheckedAt(OffsetDateTime.now(ZoneOffset.UTC));
         historyRepository.save(log);
     }
 

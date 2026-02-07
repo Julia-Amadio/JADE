@@ -5,6 +5,9 @@ import com.jadeproject.backend.repository.MonitorRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -31,12 +34,14 @@ public class MonitorScheduler {
     //Roda a cada 10 segundos (10000ms) após o término da última execução
     @Scheduled(fixedDelay = 10000)
     public void checkMonitors() {
-        log.info("------- INICIANDO VERIFICAÇÃO DE MONITORES -------");
-        List<Monitor> monitors = monitorRepository.findAll();
+        //1. O banco filtra e só traz quem precisa rodar
+        List<Monitor> monitors = monitorRepository.findMonitorsToProcess();
 
         if (monitors.isEmpty()) {
-            log.info("Nenhum monitor cadastrado!");
+            return; //Ninguém pra rodar, volta a dormir.
         }
+
+        log.info("Verificando {} monitores...", monitors.size());
 
         for (Monitor monitor: monitors) {
             long startTime = System.currentTimeMillis();
@@ -72,6 +77,9 @@ public class MonitorScheduler {
                 * Se o código for 0 -> Salva "Timeout..."
                 * Se o código for 500 -> "Erro HTTP 500"*/
             }
+
+            monitor.setLastChecked(OffsetDateTime.now(ZoneOffset.UTC));
+            monitorRepository.save(monitor);
         }
 
         log.info("--------------- FIM DA VERIFICAÇÃO ---------------");

@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "monitors")
@@ -42,7 +44,13 @@ public class Monitor {
     private Boolean isActive = true;
 
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
+
+    //--- NOVO CAMPO ---
+    //Armazena a data/hora da última vez que o Scheduler verificou este monitor.
+    //Pode ser nulo (se acabou de ser criado e nunca rodou)
+    @Column(name = "last_checked")
+    private OffsetDateTime lastChecked;
 
     @PrePersist
     protected void onCreate() {
@@ -50,7 +58,7 @@ public class Monitor {
         * Durante runtime, se temos X usuários criando monitores ao mesmo tempo, o Java cria X instâncias desse formulário na memória.
         * this se refere à cópia específica do formulário (OBJETO!) com que ele está lidando no momento.*/
         if (this.createdAt == null) {
-            this.createdAt = LocalDateTime.now();
+            this.createdAt = OffsetDateTime.now(ZoneOffset.UTC);
         }
         if (this.isActive == null) {
             this.isActive = true;

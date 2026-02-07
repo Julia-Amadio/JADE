@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 @Service
 public class IncidentService {
@@ -34,7 +36,7 @@ public class IncidentService {
             newIncident.setStatus("OPEN");
             newIncident.setSeverity("HIGH"); //ou "CRITICAL"
             newIncident.setTitle("Monitor Down: " + monitor.getName());
-            newIncident.setCreatedAt(LocalDateTime.now());
+            newIncident.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
             newIncident.setDescription(errorReason); //ex.: "Timeout", "404 Not Found"
 
             incidentRepository.save(newIncident);
@@ -52,7 +54,7 @@ public class IncidentService {
             //2. Se existe, fechar o incidente
             Incident incident = openIncident.get();
             incident.setStatus("RESOLVED");
-            incident.setEndedAt(LocalDateTime.now());
+            incident.setEndedAt(OffsetDateTime.now(ZoneOffset.UTC));
 
             incidentRepository.save(incident);
             System.out.println("[ALERTA] Incidente RESOLVIDO: " + monitor.getName() + " voltou ao normal.");

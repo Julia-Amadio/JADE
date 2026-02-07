@@ -6,6 +6,8 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "monitor_history")
@@ -38,12 +40,13 @@ public class MonitorHistory {
     private Boolean isSuccessful;
 
     @Column(name = "checked_at", updatable = false)
-    private LocalDateTime checkedAt;
+    private OffsetDateTime checkedAt;
 
     @PrePersist
     protected void onCreate() {
         if (this.checkedAt == null) {
-            this.checkedAt = LocalDateTime.now();
+            //Garante UTC antes de salvar
+            this.checkedAt = OffsetDateTime.now(ZoneOffset.UTC);
         }
     }
 }
