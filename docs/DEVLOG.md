@@ -189,22 +189,12 @@ Alterações:
 2. [Conexão do scheduler ao BD](https://github.com/Julia-Amadio/JADE/commit/e93357636bcc867f87452e0c26ae0a6b98786191) para que os logs sejam salvos no histórico, além de atualização do método ``saveLog`` no ``MonitorHistoryService.java`` para que ele salve valores na coluna ``is_successful`` no BD.
 
 # <br>04/02 - Gestão de incidentes ([603f786](https://github.com/Julia-Amadio/JADE/commit/603f78667af74bb0720ffad54555a9198d51d138)) e ajustes para o MonitorHistory ([4c3ba4c](https://github.com/Julia-Amadio/JADE/commit/4c3ba4ccf33e54d48a21f169624aaf79d1eab800))
-Com o registro de logs pronto, o próximo passo lógico é dar inteligência ao monitoramento. 
-
-Se um monitor onde um ping é lançado a cada 10 segundos possui 600 logs de DOWN, não temos 600 problemas, mas sim um problema que durou 1 hora -- assim, temos um INCIDENTE.
+Com o registro de logs pronto, o próximo passo lógico é dar inteligência ao monitoramento. Se um monitor onde um ping é lançado a cada minuto possui 60 logs de DOWN, não temos 60 problemas, mas sim um problema que durou 1 hora -- assim, temos um INCIDENTE.
 
 Foi implementada a seguinte lógica no scheduler:
-1. UP --> DOWN:
-   - A URL monitorada caiu. 
-   - Verificação: já existe um incidente aberto para esse monitor? 
-   - Não? ABRIR INCIDENTE (Status: OPEN).
-2. DOWN --> DOWN:
-   - A URL continua sem fornecer resposta. 
-   - Fazer nada (ou apenas atualizar o log). O incidente continua OPEN.
-3. DOWN --> UP:
-   - Voltou!
-   - Verificar: Existe um incidente aberto? 
-   - Se sim, FECHAR INCIDENTE (Status: RESOLVED).
+1. **UP --> DOWN:** a URL monitorada caiu. O sistema verificará **se já existe um incidente aberto** para esse monitor. Se não, ABRIR INCIDENTE (``Status: OPEN``).
+2. **DOWN --> DOWN:** a URL continua sem fornecer resposta, o incidente continua OPEN.
+3. **DOWN --> UP:** a URL forneceu resposta. O sistema verificará **se existe um incidente aberto**. Se sim, FECHAR INCIDENTE (``Status: RESOLVED``).
 
 ## Atualizações no ``MonitorHistoryRepository`` e ``MonitorHistoryService``
 O método de busca dos últimos 10 logs de um monitor foi atualizado para que utilize paginação. Quando é feita a passagem do objeto ``Pageable`` para o repositório, o Spring Data intercepta a chamada, entendendo que não queremos a lista toda e que deve reescrever a consulta SQL automaticamente.
