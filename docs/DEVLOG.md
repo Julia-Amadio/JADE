@@ -275,3 +275,22 @@ Em ambientes Cloud (serverless/containers), os servidores geralmente operam em U
 3. **Native query (``MonitorRepository``):** atualização da query do scheduler. Substituição do ``NOW()`` genérico por ``CURRENT_TIMESTAMP``, permitindo que o PostgreSQL (operando com colunas ``TIMESTAMPTZ``) faça a aritmética correta entre o último checagem e o intervalo definido, respeitando o offset de tempo.
 
 *Todas as atualizações mencionadas nesta seção podem ser visualizadas [neste commit](https://github.com/Julia-Amadio/JADE/commit/2f0f900788534735069dd6b965810fa14fd433c5).*
+
+# <br>09/02 - Camada DTO e tratamento de exceções (a8ac8729e82cd8049ab4c1076c39a5be34d55891)
+Foi realizada uma refatoração estrutural separando as responsabilidades de persistência (Entity) das responsabilidades de contrato de API (DTO). Foi implementado também um tratamento de erros centralizado para melhorar a experiência do cliente da API.
+
+## 1. Implementação do padrão DTO (*Data Transfer Object*)
+Anteriormente, os Controllers estavam expondo diretamente as Entidades JPA (``User`` e ``Monitor``). Isso trazia riscos de segurança (exposição do hash da senha) e problemas técnicos (referência circular/StackOverflow ao serializar JSON). A solução foi dividir cada modelo em três representações:
+- **CreateDTO:** focado na entrada, contém validações rígidas (``@NotBlank``, ``@Email``, regex de complexidade de senha) para garantir a integridade dos dados antes de tocarem a regra de negócio;
+- **ResponseDTO:** focado na saída, sanitiza os dados (remove senhas e dados sensíveis) e achata relacionamentos (retorna ``userId`` ao invés do objeto ``User`` completo) para evitar loops infinitos;
+- **UpdateDTO:** focado em atualização, permite campos nulos, possibilitando que o usuário atualize apenas a senha ou apenas o email, sem precisar reenviar o objeto inteiro (comportamento similar ao PATCH).
+
+## 2. Tratamento de erros (*Global Exception Handler*)
+Erros genéricos foram substituídos por respostas HTTP semânticas e informativas:
+- **``GlobalExceptionHandler``:** criado com ``@RestControllerAdvice``, intercepta exceções em toda a aplicação e padroniza o JSON de resposta.
+- **Validação de campos (``400 Bad Request``):** captura ``MethodArgumentNotValidException`` e retorna um mapa detalhado de qual campo falhou e porquê.
+- **Conflitos de dados (``409 Conflict``):** implementação da classe ``DataConflictException``. Tentativas de cadastro de emails ou usernames duplicados retornam status ``409`` com mensagem clara.
+
+## 3. Atualização da lógica de negócio (``service`` & ``controller``)
+- Controllers agora atuam como conversores, recebendo DTOs, chamando o Service, e convertendo o resultado para ResponseDTOs.
+- Services agora possui verificação preventiva adicional para lançar exceções de negócio antes de tentar o save no banco. Foi também implementada a lógica de *Partial Update*: o Service verifica campo a campo; se o DTO trouxe um valor (não nulo), ele atualiza a entidade. Se trouxe nulo, mantém o valor antigo.
