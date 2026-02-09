@@ -28,7 +28,7 @@ public class DataLoader {
                 User newUser = new User();
                 newUser.setUsername("julia_admin");
                 newUser.setEmail("julia@jade.com");
-                newUser.setPasswordHash("123456"); //Futuro: será hash real
+                newUser.setPasswordHash("123456789"); //Futuro: será hash real
 
                 user = userService.registerUser(newUser);
                 System.out.println("Usuário criado: " + user.getUsername());
