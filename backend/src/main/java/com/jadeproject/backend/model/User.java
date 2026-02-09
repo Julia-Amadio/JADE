@@ -20,7 +20,6 @@ import lombok.NoArgsConstructor;
   útil para testes ou para criar um objeto novo já preenchido em uma linha só.*/
 import lombok.AllArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 

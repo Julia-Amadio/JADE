@@ -1,11 +1,11 @@
 package com.jadeproject.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import java.time.LocalDateTime;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
@@ -46,7 +46,6 @@ public class Monitor {
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
 
-    //--- NOVO CAMPO ---
     //Armazena a data/hora da última vez que o Scheduler verificou este monitor.
     //Pode ser nulo (se acabou de ser criado e nunca rodou)
     @Column(name = "last_checked")
