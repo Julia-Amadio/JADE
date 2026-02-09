@@ -93,7 +93,7 @@ Ao estender ``JpaRepository``, o Spring automaticamente fornece dezenas de méto
 Em resumo, o Repository serve para isolar o código Java da complexidade do SQL, transformando o BD em métodos simples de Java.
 
 # <br>09/01 - Testes
-## SMOKE TEST (“teste de fumaça”)
+## 1. SMOKE TEST (“teste de fumaça”)
 Simplesmente rodar a aplicação (``public class JadeprojectBackendApplication``). Isso testa:
 - Se o Spring consegue se conectar ao banco de dados.
 - Se as anotações (``@Entity``, ``@Column``) estão corretas.
@@ -101,7 +101,7 @@ Simplesmente rodar a aplicação (``public class JadeprojectBackendApplication``
 
 **Resultado esperado:** console deve terminar com uma mensagem parecida com ``Started JadeProjectApplication in X seconds``, não exibindo Exception ou quaisquer outros avisos de erro.
 
-## Alterações no banco
+## 2. Alterações no banco
 O console exibiu o seguinte erro:
 ```diff
 - 2026-01-09T12:57:35.130-03:00 ERROR 36756 --- [JADE] [main] j.LocalContainerEntityManagerFactoryBean : Failed to initialize JPA EntityManagerFactory: 
@@ -123,8 +123,8 @@ ALTER TABLE monitor_history ALTER COLUMN monitor_id TYPE BIGINT;
 ALTER TABLE monitors ALTER COLUMN user_id TYPE BIGINT;
 ```
 
-## TESTE DE CARGA INICIAL (*data loader*)
-Envolve a criação da classe temporária chamada ``DataLoader.java``, que é inserida no pacote raiz e roda assim que o sistema liga. Ela vai tentar salvar um usuário e mostrar no console, provando que as camadas estão conversando perfeitamente. Inicialmente, ela está elaborada para funcionar sem a camada Service, vide [este commit](https://github.com/Julia-Amadio/JADE/commit/6398df3ff27e1797e3afc5599fcace5704d3b8b0).
+## 3. Teste de carga inicial ([6398df3](https://github.com/Julia-Amadio/JADE/commit/6398df3ff27e1797e3afc5599fcace5704d3b8b0))
+Envolve a criação da classe temporária chamada ``DataLoader.java``, que é inserida no pacote raiz e roda assim que o sistema liga. Ela vai tentar salvar um usuário e mostrar no console, provando que as camadas estão conversando perfeitamente. Inicialmente, ela está elaborada para funcionar sem a camada Service.
 
 # <br>10/01 - Camada Service (Package com.jadeproject.backend.repository) e alterações
 A camada Service serve para garantir o princípio do SOC (Separation of Concerns, ou separação de responsabilidades). Suas funções principais incluem:
@@ -146,8 +146,8 @@ ALTER TABLE incidents ADD COLUMN ended_at TIMESTAMP;
 ```
 Diferente de ``created_at``, ``ended_at`` não tem um default ou valor a ser auto-preenchido, pois deve ser considerada como nula até que o incidente em aberto seja resolvido de fato. Além disso, foi necessária alteração na classe ``com.jadeproject.backend.model.Incident`` para a inclusão desta nova coluna, conforme mostrado [neste commit](https://github.com/Julia-Amadio/JADE/commit/40fa2b2c42ce315b05f9b56ad6a94352b209f344).
 
-## Atualizações no ``DataLoader.java``
-O teste de carga de dados foi reestruturado (vide [este commit](https://github.com/Julia-Amadio/JADE/commit/be8d96fcbcb9a45811a84267caba8650035a56a5)) para que fizesse uso da camada de Serviços. Em sequência, ele realiza:
+## Atualizações no ``DataLoader.java`` ([be8d96f](https://github.com/Julia-Amadio/JADE/commit/be8d96fcbcb9a45811a84267caba8650035a56a5))
+O teste de carga de dados foi reestruturado para que fizesse uso da camada de Serviços. Em sequência, ele realiza:
 - A criação de um Usuário;
 - A criação de um Monitor, pertencente ao Usuário teste;
 - A criação de quatro logs para o Monitor, com três sucessos e uma falha;
@@ -276,7 +276,7 @@ Em ambientes Cloud (serverless/containers), os servidores geralmente operam em U
 
 *Todas as atualizações mencionadas nesta seção podem ser visualizadas [neste commit](https://github.com/Julia-Amadio/JADE/commit/2f0f900788534735069dd6b965810fa14fd433c5).*
 
-# <br>09/02 - Camada DTO e tratamento de exceções (a8ac872)
+# <br>09/02 - Camada DTO e tratamento de exceções ([a8ac872](https://github.com/Julia-Amadio/JADE/commit/a8ac8729e82cd8049ab4c1076c39a5be34d55891))
 Foi realizada uma refatoração estrutural separando as responsabilidades de persistência (Entity) das responsabilidades de contrato de API (DTO). Foi implementado também um tratamento de erros centralizado para melhorar a experiência do cliente da API.
 
 ## 1. Implementação do padrão DTO (*Data Transfer Object*)
