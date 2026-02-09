@@ -1,7 +1,11 @@
 package com.jadeproject.backend.controller;
 
+import com.jadeproject.backend.dto.UserCreateDTO;
+import com.jadeproject.backend.dto.UserResponseDTO;
+import com.jadeproject.backend.dto.UserUpdateDTO;
 import com.jadeproject.backend.model.User;
 import com.jadeproject.backend.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,18 +21,46 @@ public class UserController {
 
     //1. CRIAR USUÁRIO
     //URL: POST http://localhost:8080/users
+    //Recebe DTO, devolve DTO
     @PostMapping
-    public ResponseEntity<User> registerUser(@RequestBody User user) {
-        User newUser = userService.registerUser(user);
-        return ResponseEntity.ok(newUser);
+    public ResponseEntity<UserResponseDTO> registerUser(@Valid @RequestBody UserCreateDTO createDto) {
+        //Converte DTO de Entrada para Entity (manual mapper)
+        User userEntity = new User();
+        userEntity.setUsername(createDto.getUsername());
+        userEntity.setEmail(createDto.getEmail());
+        userEntity.setPasswordHash(createDto.getPassword()); //Service vai hashear isso
+
+        //Chama o Service (logica de negócio)
+        User savedUser = userService.registerUser(userEntity);
+
+        //Converte Entity salva para DTO de resposta (esconde a senha)
+        return ResponseEntity.ok(toResponseDTO(savedUser));
     }
 
-    //2. BUSCAR POR USERNAME (simula Login por enquanto)
+    //2. BUSCAR POR USERNAME
     //URL: GET http://localhost:8080/users/{username}
     @GetMapping("/{username}")
-    public ResponseEntity<User> getUserByUsername(@PathVariable String username) {
+    public ResponseEntity<UserResponseDTO> getUserByUsername(@PathVariable String username) {
         return userService.findByUsername(username)
-                .map(ResponseEntity::ok) //Se achar, retorna 200 OK com o user
-                .orElse(ResponseEntity.notFound().build()); //Se não, 404 Not Found
+                .map(user -> ResponseEntity.ok(toResponseDTO(user))) //Se achar, converte
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    //3. UPDATE USUÁRIO
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable Long id,
+                                                      @Valid @RequestBody UserUpdateDTO updateDto) {
+        User updatedUser = userService.updateUser(id, updateDto);
+        return ResponseEntity.ok(toResponseDTO(updatedUser));
+    }
+
+    //Método auxiliar para converter Entity -> ResponseDTO
+    private UserResponseDTO toResponseDTO(User user) {
+        UserResponseDTO dto = new UserResponseDTO();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setCreatedAt(user.getCreatedAt());
+        return dto;
     }
 }

@@ -1,5 +1,7 @@
 package com.jadeproject.backend.service;
 
+import com.jadeproject.backend.dto.MonitorUpdateDTO;
+import com.jadeproject.backend.exception.DataConflictException;
 import com.jadeproject.backend.model.Monitor;
 import com.jadeproject.backend.model.User;
 import com.jadeproject.backend.repository.MonitorRepository;
@@ -33,22 +35,18 @@ public class MonitorService {
             throw new RuntimeException("O intervalo mínimo permitido é de " + MIN_INTERVAL_SECONDS + " segundos.");
         }
 
-        //2. Validar regra de negócio: nome único (escopo do usuário)
-        boolean nameAlreadyExists = monitorRepository.existsByNameAndUserId(monitor.getName(), userId);
-        if (nameAlreadyExists) {
-            throw new RuntimeException("[ERRO] Você já possui um monitor chamado '" + monitor.getName() + "'.");
+        //3. Validar regra de negócio: nome único (escopo do usuário)
+        if (monitorRepository.existsByNameAndUserId(monitor.getName(), userId)) {
+            throw new DataConflictException("Você já possui um monitor com o nome '" + monitor.getName() + "'.");
         }
 
-        //3. [NOVO] Validar regra de negócio: url do monitor deve ser única (ESCOPO DO USUÁRIO)
-        boolean urlAlreadyExists = monitorRepository.existsByUrlAndUserId(monitor.getUrl(), userId);
-        if (urlAlreadyExists) {
-            throw new RuntimeException("[ERRO] Você já está monitorando a URL '" + monitor.getUrl() + "'.");
+        //4. Validar regra de negócio: url do monitor deve ser única (ESCOPO DO USUÁRIO)
+        if (monitorRepository.existsByUrlAndUserId(monitor.getUrl(), userId)) {
+            throw new DataConflictException("A URL '" + monitor.getUrl() + "' já está sendo monitorada por você.");
         }
 
-        //4. Vincular monitor ao usuário
+        //5. Vincular monitor ao usuário
         monitor.setUser(user);
-
-        //5. Validar se a URL é válida/formatada corretamente. Possível usar UrlValidator aqui no futuro
         System.out.println("Criando monitor '" + monitor.getName() + "' para o usuário " + user.getUsername());
         return monitorRepository.save(monitor);
     }
@@ -64,5 +62,40 @@ public class MonitorService {
         } else {
             throw new RuntimeException("Monitor não encontrado para exclusão.");
         }
+    }
+
+    //Update parcial
+    public Monitor updateMonitor(Long id, MonitorUpdateDTO dto) {
+        Monitor monitor = monitorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Monitor não encontrado."));
+
+        Long userId = monitor.getUser().getId();
+
+        //Verifica mudança de NOME
+        if (dto.getName() != null && !dto.getName().equals(monitor.getName())) {
+            //Se mudou o nome, verifica se o NOVO nome já não existe na lista dele
+            if (monitorRepository.existsByNameAndUserId(dto.getName(), userId)) {
+                throw new DataConflictException("Você já possui um monitor com o nome '" + dto.getName() + "'.");
+            }
+            monitor.setName(dto.getName());
+        }
+
+        //Verifica mudança de URL
+        if (dto.getUrl() != null && !dto.getUrl().equals(monitor.getUrl())) {
+            if (monitorRepository.existsByUrlAndUserId(dto.getUrl(), userId)) {
+                throw new DataConflictException("A URL '" + dto.getUrl() + "' já está sendo monitorada por você.");
+            }
+            monitor.setUrl(dto.getUrl());
+        }
+
+        //Outros campos simples (sem validação de duplicidade)
+        if (dto.getIntervalSeconds() != null) {
+            monitor.setIntervalSeconds(dto.getIntervalSeconds());
+        }
+        if (dto.getIsActive() != null) {
+            monitor.setIsActive(dto.getIsActive());
+        }
+
+        return monitorRepository.save(monitor);
     }
 }

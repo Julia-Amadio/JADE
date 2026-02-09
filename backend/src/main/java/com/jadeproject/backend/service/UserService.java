@@ -1,5 +1,7 @@
 package com.jadeproject.backend.service;
 
+import com.jadeproject.backend.dto.UserUpdateDTO;
+import com.jadeproject.backend.exception.DataConflictException;
 import com.jadeproject.backend.model.User;
 import com.jadeproject.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -20,13 +22,13 @@ public class UserService {
     //Registra um novo usuário no sistema. Verifica se já existe antes de salvar.
     public User registerUser(User user) {
         //Regra 1: não permite usuário duplicado
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            throw new RuntimeException("ERRO: username '" + user.getUsername() + "' já existe.");
+        if (userRepository.existsByUsername(user.getUsername())) {
+            throw new DataConflictException("O nome de usuário '" + user.getUsername() + "' já está em uso.");
         }
 
         //Regra 2: não permite email duplicado
-        if(userRepository.findByEmail(user.getEmail()).isPresent()) {
-            throw new RuntimeException("ERRO: email '" + user.getEmail() + "' já existe.");
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new DataConflictException("O e-mail '" + user.getEmail() + "' já está cadastrado.");
         }
 
         //Regra 3: criptografia de senha (faremos isso de verdade quando instalarmos o Spring Security)
@@ -45,4 +47,32 @@ public class UserService {
 
     //Busca por username
     public Optional<User> findByUsername(String username) { return userRepository.findByUsername(username); }
+
+    public User updateUser(Long id, UserUpdateDTO dto) {
+        //Busca o usuário (se não achar, erro)
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+
+        //Atualiza campos APENAS se não forem nulos ou duplicados
+        if (dto.getUsername() != null && !dto.getUsername().equals(user.getUsername())) {
+            if (userRepository.existsByUsername(dto.getUsername())) {
+                throw new DataConflictException("Este nome de usuário já está em uso.");
+            }
+            user.setUsername(dto.getUsername());
+        }
+        //Se estiver trocando de email, verifica se o NOVO email já não é de outra pessoa
+        if (dto.getEmail() != null && !dto.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(dto.getEmail())) {
+                throw new DataConflictException("Este e-mail já está em uso por outro usuário.");
+            }
+            user.setEmail(dto.getEmail());
+        }
+        if (dto.getPassword() != null) {
+            //Aqui entra Hash no futuro. Por enquanto, atribuição direta
+            user.setPasswordHash(dto.getPassword());
+        }
+
+        //Salva e retorna
+        return userRepository.save(user);
+    }
 }
