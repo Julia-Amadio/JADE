@@ -276,7 +276,7 @@ Em ambientes Cloud (serverless/containers), os servidores geralmente operam em U
 
 *Todas as atualizações mencionadas nesta seção podem ser visualizadas [neste commit](https://github.com/Julia-Amadio/JADE/commit/2f0f900788534735069dd6b965810fa14fd433c5).*
 
-# <br>09/02 - Camada DTO e tratamento de exceções (https://github.com/Julia-Amadio/JADE/commit/a8ac8729e82cd8049ab4c1076c39a5be34d55891)
+# <br>09/02 - Camada DTO e tratamento de exceções (a8ac872)
 Foi realizada uma refatoração estrutural separando as responsabilidades de persistência (Entity) das responsabilidades de contrato de API (DTO). Foi implementado também um tratamento de erros centralizado para melhorar a experiência do cliente da API.
 
 ## 1. Implementação do padrão DTO (*Data Transfer Object*)
