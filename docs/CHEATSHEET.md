@@ -1,4 +1,4 @@
-Para uso pessoal.
+Para uso no escopo deste projeto.
 
 # Git
 ## 1. Fluxo comum
