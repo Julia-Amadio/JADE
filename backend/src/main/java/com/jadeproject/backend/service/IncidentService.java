@@ -3,6 +3,7 @@ package com.jadeproject.backend.service;
 import com.jadeproject.backend.model.Incident;
 import com.jadeproject.backend.model.Monitor;
 import com.jadeproject.backend.repository.IncidentRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Slf4j
 @Transactional(readOnly = true)
 public class IncidentService {
 
@@ -29,7 +31,7 @@ public class IncidentService {
 
         if (openIncident.isPresent()) {
             //Se já está aberto, não fazer nada (pode tbm atualizar o log)
-            System.out.println("Monitor " + monitor.getName() + " continua DOWN. Incidente já aberto.");
+            log.info("Monitor '{}' continua DOWN. Incidente já aberto (ID: {}).", monitor.getName(), openIncident.get().getId());
         } else {
             //2. Se não tem, cria um novo incidente
             Incident newIncident = new Incident();
@@ -41,7 +43,7 @@ public class IncidentService {
             newIncident.setDescription(errorReason); //ex.: "Timeout", "404 Not Found"
 
             incidentRepository.save(newIncident);
-            System.out.println("[ALERTA] NOVO INCIDENTE CRIADO: " + monitor.getName() + " encontra-se fora do ar.");
+            log.warn("[ALERTA] NOVO INCIDENTE CRIADO: {} está fora do ar. Motivo: {}", monitor.getName(), errorReason);
             //TODO: futuramente, enviaria o email/slack de alerta
         }
     }
@@ -59,7 +61,7 @@ public class IncidentService {
             incident.setEndedAt(OffsetDateTime.now(ZoneOffset.UTC));
 
             incidentRepository.save(incident);
-            System.out.println("[ALERTA] Incidente RESOLVIDO: " + monitor.getName() + " voltou ao normal.");
+            log.info("[RESOLVIDO] Incidente fechado para '{}'. O serviço voltou ao normal.", monitor.getName());
             //TODO: enviar email de normalização.
         }
     }
