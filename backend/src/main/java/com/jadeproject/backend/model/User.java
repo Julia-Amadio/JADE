@@ -20,6 +20,9 @@ import lombok.NoArgsConstructor;
   útil para testes ou para criar um objeto novo já preenchido em uma linha só.*/
 import lombok.AllArgsConstructor;
 
+//Para ignorar o campo passwordHash em logs
+import lombok.ToString;
+
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
@@ -42,6 +45,7 @@ public class User {
     private String email;
 
     @Column(name = "pswd_hash", nullable = false, length = 255) //'name' diz qual é a coluna no banco
+    @ToString.Exclude
     private String passwordHash;
 
     @Column(name = "created_at", updatable = false)

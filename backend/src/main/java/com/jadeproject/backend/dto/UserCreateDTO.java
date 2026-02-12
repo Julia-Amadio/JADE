@@ -21,7 +21,9 @@ public class UserCreateDTO {
     //O campo chama 'password' (o que o user digita), não 'passwordHash'
     @NotBlank(message = "A senha é obrigatória")
     @Size(min = 8, message = "A senha deve ter no mínimo 8 caracteres")
-    @Pattern(regexp = "^[a-zA-Z0-9@#$%^&+=!]+$", message = "Caractere inválido na senha")
+    //@Pattern(regexp = "^[a-zA-Z0-9@#$%^&+=!]+$", message = "Caractere inválido na senha")
+    //Removida regex acima pois é muito restritiva (não permite espaço, ç, ~, etc..)
+    //Estava sendo utilizado para não permitir emojis. Porém, por sugestão do Gemini (risos..), é melhor deixar o BCrypt lidar com os caracteres.
     @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).*$", message = "Senha fraca: precisa de maiúscula, minúscula e número")
     private String password;
 }

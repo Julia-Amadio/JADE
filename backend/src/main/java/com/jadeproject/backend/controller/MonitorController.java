@@ -49,13 +49,20 @@ public class MonitorController {
         monitorEntity.setName(createDto.getName());
         monitorEntity.setUrl(createDto.getUrl());
         monitorEntity.setIntervalSeconds(createDto.getIntervalSeconds());
-        monitorEntity.setIsActive(createDto.getIsActive());
+
+        //CLEAN CODE: só altera o status se o usuário EXPLICITAMENTE mandou algo (ex: false)
+        //Se vier null no DTO, ignora e mantém o 'true' padrão do Java
+        if (createDto.getIsActive() != null) {
+            monitorEntity.setIsActive(createDto.getIsActive());
+        }
 
         //Salva
         Monitor savedMonitor = monitorService.createMonitor(monitorEntity, userId);
 
-        //Retorna DTO
-        return ResponseEntity.ok(toResponseDTO(savedMonitor));
+        //Retorna DTO, agora com 201 (Created)
+        //201 é o padrão REST para métodos POST que criam registros. O 200 é genérico demais
+        //Usar 201 ajuda quem consome a API a saber exatamente que um registro novo nasceu
+        return ResponseEntity.status(201).body(toResponseDTO(savedMonitor));
     }
 
     //2. LISTAR MONITORES DE UM USUÁRIO (agora retorna lista de DTOs)

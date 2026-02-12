@@ -5,12 +5,17 @@ import com.jadeproject.backend.exception.DataConflictException;
 import com.jadeproject.backend.model.Monitor;
 import com.jadeproject.backend.model.User;
 import com.jadeproject.backend.repository.MonitorRepository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class MonitorService {
 
     private final MonitorRepository monitorRepository;
@@ -26,6 +31,7 @@ public class MonitorService {
     * Um usuário pode ter dois monitores para a mesma url caso desejar intervalos diferentes.*/
 
     //Cria um novo monitor para um usuário em específico.
+    @Transactional
     public Monitor createMonitor(Monitor monitor, Long userId) {
         //1. Validar se o usuário dono existe
         User user = userService.findById(userId).orElseThrow(() -> new RuntimeException("Erro: Usuário não encontrado para ID " + userId));
@@ -47,7 +53,8 @@ public class MonitorService {
 
         //5. Vincular monitor ao usuário
         monitor.setUser(user);
-        System.out.println("Criando monitor '" + monitor.getName() + "' para o usuário " + user.getUsername());
+        monitor.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
+        log.info("Criando monitor '" + monitor.getName() + "' para o usuário " + user.getUsername());
         return monitorRepository.save(monitor);
     }
 
@@ -56,6 +63,7 @@ public class MonitorService {
     public Optional<Monitor> findById(Long id) { return monitorRepository.findById(id); }
 
     //Método para deletar (CRUD)
+    @Transactional
     public void deleteMonitor(Long id) {
         if (monitorRepository.existsById(id)) {
             monitorRepository.deleteById(id);
@@ -65,6 +73,7 @@ public class MonitorService {
     }
 
     //Update parcial
+    @Transactional
     public Monitor updateMonitor(Long id, MonitorUpdateDTO dto) {
         Monitor monitor = monitorRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Monitor não encontrado."));

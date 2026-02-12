@@ -3,16 +3,17 @@ package com.jadeproject.backend.service;
 import com.jadeproject.backend.model.Monitor;
 import com.jadeproject.backend.model.MonitorHistory;
 import com.jadeproject.backend.repository.MonitorHistoryRepository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.PageRequest; //Para solicitar X itens
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 @Service
+@Transactional(readOnly = true) //Define o padrão como LEITURA (mais seguro e performático)
 public class MonitorHistoryService {
 
     private final MonitorHistoryRepository historyRepository;
@@ -23,6 +24,7 @@ public class MonitorHistoryService {
 
     //Registra uma nova verificação (ping/http check) no banco
     //Quem vai fazer isso no futuro é o scheduler
+    @Transactional
     public void saveLog(Monitor monitor, int statusCode, long responseTimeMs, boolean isUp) {
         MonitorHistory log = new MonitorHistory();
         log.setMonitor(monitor);

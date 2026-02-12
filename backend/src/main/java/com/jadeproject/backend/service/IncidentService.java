@@ -3,16 +3,16 @@ package com.jadeproject.backend.service;
 import com.jadeproject.backend.model.Incident;
 import com.jadeproject.backend.model.Monitor;
 import com.jadeproject.backend.repository.IncidentRepository;
-import com.jadeproject.backend.repository.MonitorHistoryRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Optional;
 
 @Service
+@Transactional(readOnly = true)
 public class IncidentService {
 
     private final IncidentRepository incidentRepository;
@@ -22,6 +22,7 @@ public class IncidentService {
     }
 
     //LÓGICA: o site CAIU, o que fazer?
+    @Transactional //readOnly = false é o padrão aqui
     public void handleDownEvent(Monitor monitor, String errorReason) {
         //1. Verifica se já existe incidente aberto para este monitor
         Optional<Incident> openIncident = incidentRepository.findByMonitorIdAndStatus(monitor.getId(), "OPEN");
@@ -46,6 +47,7 @@ public class IncidentService {
     }
 
     //Lógica: o site VOLTOU, o que fazer?
+    @Transactional
     public void handleUpEvent(Monitor monitor) {
         //1. Verifica se existe um incidente que ficou ABERTO
         Optional<Incident> openIncident = incidentRepository.findByMonitorIdAndStatus(monitor.getId(), "OPEN");

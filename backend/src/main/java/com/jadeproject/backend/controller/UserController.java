@@ -34,7 +34,7 @@ public class UserController {
         User savedUser = userService.registerUser(userEntity);
 
         //Converte Entity salva para DTO de resposta (esconde a senha)
-        return ResponseEntity.ok(toResponseDTO(savedUser));
+        return ResponseEntity.status(201).body(toResponseDTO(savedUser));
     }
 
     //2. BUSCAR POR USERNAME
