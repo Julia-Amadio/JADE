@@ -271,10 +271,20 @@ Em ambientes Cloud (serverless/containers), os servidores geralmente operam em U
 Foi realizada uma refatoração estrutural separando as responsabilidades de persistência (Entity) das responsabilidades de contrato de API (DTO). Foi implementado também um tratamento de erros centralizado para melhorar a experiência do cliente da API.
 
 ## 1. Implementação do padrão DTO (*Data Transfer Object*)
-Anteriormente, os Controllers estavam expondo diretamente as Entidades JPA (``User`` e ``Monitor``). Isso trazia riscos de segurança (exposição do hash da senha) e problemas técnicos (referência circular/StackOverflow ao serializar JSON). A solução foi dividir cada modelo em três representações:
-- **CreateDTO:** focado na entrada, contém validações rígidas (``@NotBlank``, ``@Email``, regex de complexidade de senha) para garantir a integridade dos dados antes de tocarem a regra de negócio;
-- **ResponseDTO:** focado na saída, sanitiza os dados (remove senhas e dados sensíveis) e achata relacionamentos (retorna ``userId`` ao invés do objeto ``User`` completo) para evitar loops infinitos;
-- **UpdateDTO:** focado em atualização, permite campos nulos, possibilitando que o usuário atualize apenas a senha ou apenas o email, sem precisar reenviar o objeto inteiro (comportamento similar ao PATCH).
+Anteriormente, os Controllers estavam expondo diretamente as Entidades JPA (``User`` e ``Monitor``). Isso trazia riscos de segurança (exposição do hash da senha) e problemas técnicos (referência circular/StackOverflow ao serializar JSON). A solução foi dividir cada modelo em três representações para as entidades User e Monitor, cada um com uma responsabilidade exclusiva no ciclo de vida REST:
+- **CreateDTO (input de criação)** 
+   - Uso exclusivo para requisições ``POST``.
+   - **Responsabilidade:** define os dados mínimos obrigatórios para instanciar um novo registro.
+   - **Comportamento:** aplica validações rígidas (``@NotNull``, ``@NotBlank``) para garantir que o objeto não nasça em estado inválido. Não contém campo ID, pois este é gerado pelo banco.
+- **UpdateDTO (input de atualização)** 
+   - Uso exclusivo para requisições ``PUT`` ou ``PATCH``.
+   - **Responsabilidade:** transportar apenas as alterações desejadas.
+   - **Comportamento:** possui validações flexíveis. Campos ausentes (null) são interpretados pelo Service como "manter valor original". É mais restritivo que o CreateDTO em termos de escopo (ex: não permite alterar chaves estrangeiras ou datas de auditoria).
+- **ResponseDTO (output universal)** 
+   - Usado para retorno de requisições ``GET``, ``POST`` e ``PUT``. Não é necessário para ``DELETE``, pois o mesmo não retorna corpo de requisição.
+   - **Responsabilidade:** projetar os dados para o cliente de forma segura e formatada.
+   - Filtra dados sensíveis presentes na Entidade (ex: remove ``passwordHash`` do Usuário).
+   - Mesmo em operações de escrita (``POST/PUT``), o Backend retorna o ResponseDTO para confirmar ao Frontend como o dados foram persistidos no banco (incluindo dados gerados pelo servidor, como ``createdAt`` ou ``id``), permitindo que a interface se atualize instantaneamente sem precisar fazer um novo ``GET``.
 
 ## 2. Tratamento de erros (*Global Exception Handler*)
 Erros genéricos foram substituídos por respostas HTTP semânticas e informativas:
@@ -285,3 +295,23 @@ Erros genéricos foram substituídos por respostas HTTP semânticas e informativ
 ## 3. Atualização da lógica de negócio (``service`` & ``controller``)
 - Controllers agora atuam como conversores, recebendo DTOs, chamando o Service, e convertendo o resultado para ResponseDTOs.
 - Services agora possui verificação preventiva adicional para lançar exceções de negócio antes de tentar o save no banco. Foi também implementada a lógica de *Partial Update*: o Service verifica campo a campo; se o DTO trouxe um valor (não nulo), ele atualiza a entidade. Se trouxe nulo, mantém o valor antigo.
+
+# <br>11/02 - Segurança, atomicidade e padrões REST ([09ae776](https://github.com/Julia-Amadio/JADE/commit/09ae776c0d9f2f1b0ab0749c3f690d95bf827d26))
+A principal atualização envolvida é a eliminação do armazenamento de senhas em texto plano. Foi adotado o padrão de indústria BCrypt para hashing.
+
+## Implementação do PasswordEncoder
+### 1. **Configuração da infraestrutura** 
+Criação do pacote ``config`` e definição da classe ``SecurityConfig``. Por enquanto, o objetivo dela é expor o ``PasswordEncoder`` como um Bean do Spring, permitindo que ele seja injetado em qualquer lugar da aplicação.
+### 2. **Integração no serviço (``UserService``)**
+No método ``registerUser`` e ``updateUser``, a senha recebida é interceptada antes que a entidade seja persistida. O fluxo agora é:
+1. Recebe o DTO com a senha "crua";
+2. O ``UserService`` usa o ``passwordEncoder`` injetado;
+3. A senha é transformada em um hash irreversível;
+4. O hash é salvo no banco.
+
+## Melhorias técnicas
+Além da segurança, foi realizado um "pente fino" no código para elevar o nível de maturidade do backend:
+- A anotação ``@Transactional`` foi aplicada em métodos de escrita do pacote Service. Isso garante que operações de banco de dados sejam atômicas, com rollback automático em caso de erro. O ``MonitorScheduler`` (robô) foi deixado propositalmente sem transação no nível do método pai para evitar travar conexões de banco durante chamadas de rede (HTTP Requests).
+- Foram removidos os amadores ``System.out.println``, adotando o Lombok ``@Slf4j``. Agora temos logs estruturados com níveis (``INFO``, ``ERROR``, ``WARN``) e timestamp automático.
+- Foi removida a regex restritiva (``^[a-zA-Z0-9...]``) que impedia caracteres especiais. A validação estava bloqueando senhas fortes geradas por gerenciadores de senha e frustrando usuários. Foram mantidas apenas as regras de complexidade mínima e tamanho.
+- O endpoint de criação (``POST /users``) agora retorna explicitamente o status ``201 Created`` ao invés de ``200 OK``. Isso segue a semântica correta do protocolo HTTP para criação de recursos.
