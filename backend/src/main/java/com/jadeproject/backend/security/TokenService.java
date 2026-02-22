@@ -25,7 +25,7 @@ public class TokenService {
             Algorithm algorithm = Algorithm.HMAC256(secret);
             return JWT.create()
                     .withIssuer("JadeProject_API")
-                    .withSubject(user.getUsername())
+                    .withSubject(user.getEmail())
                     .withClaim("role", user.getRole()) //Guarda se é ADMIN ou USER
                     .withExpiresAt(genExpirationDate())
                     .sign(algorithm);
