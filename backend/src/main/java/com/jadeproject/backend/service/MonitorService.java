@@ -107,4 +107,8 @@ public class MonitorService {
 
         return monitorRepository.save(monitor);
     }
+
+    public List<Monitor> getAllMonitors() {
+        return monitorRepository.findAll();
+    }
 }

@@ -61,6 +61,9 @@ public class UserService {
     //Busca por username
     public Optional<User> findByUsername(String username) { return userRepository.findByUsername(username); }
 
+    //Busca usuário pelo e-mail
+    public Optional<User> findByEmail(String email) { return userRepository.findByEmail(email); }
+
     @Transactional
     public User updateUser(Long id, UserUpdateDTO dto) {
         //Busca o usuário (se não achar, erro)

@@ -31,7 +31,6 @@ import java.time.ZoneOffset;
 @Data //O LOMBOK cria getters, setters, toString, equals e hashcode automaticamente
 @NoArgsConstructor //O LOMBOK cria o construtor vazio (obrigatório pro JPA)
 @AllArgsConstructor //O LOMBOK cria o construtor com todos os argumentos
-
 public class User {
 
     @Id
@@ -50,6 +49,9 @@ public class User {
 
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
+
+    @Column(nullable = false, length = 20)
+    private String role = "ROLE_USER"; //Valor padrão para novos objetos
 
     //Método extra para garantir que a data seja preenchida antes de salvar,
     //caso o banco não faça isso sozinho (backup de segurança)

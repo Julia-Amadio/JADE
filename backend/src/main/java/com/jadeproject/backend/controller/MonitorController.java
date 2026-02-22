@@ -4,24 +4,17 @@ import com.jadeproject.backend.dto.MonitorCreateDTO;
 import com.jadeproject.backend.dto.MonitorResponseDTO;
 import com.jadeproject.backend.dto.MonitorUpdateDTO;
 import com.jadeproject.backend.model.Monitor;
+import com.jadeproject.backend.model.User;
+import com.jadeproject.backend.security.UserDetailsImpl;
 import com.jadeproject.backend.service.MonitorService;
 
-/*Classe que representa a Resposta HTTP completa
-* Quando entregamos algo para o usuário, não entregamos só o dado (o JSON), e sim um "pacote" que contém:
-*   1. O corpo (body): o dado em si (ex: o objeto Monitor).
-*   2. Status Code: número que diz o que aconteceu (200 = OK, 404 = Não encontrado, 201 = Criado).
-*   3. Headers: informações extras (ex: tipo de conteúdo, cache).*/
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-//Traz as "etiquetas" (anotações) usadas para transformar métodos em URLs
-/*@RestController: diz "esta classe atende a web".
-* @RequestMapping: diz "qual é a URL base" (/monitors).
-* @GetMapping: "atenda requisições do tipo GET aqui".
-* @PostMapping: "atenda requisições do tipo POST aqui".
-* @PathVariable: "pegue o valor que está na URL" (ex: o id em /monitors/5).
-* @RequestBody: "pegue o JSON que veio no corpo da requisição e transforme em Objeto Java".*/
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,6 +29,32 @@ public class MonitorController {
         this.monitorService = monitorService;
     }
 
+    //Método auxiliar de segurança
+    //Verifica se o usuário logado é o DONO do ID ou se é ADMIN
+    private void checkUserPermission(Long targetUserId) {
+        //1. Pega a autenticação
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        //BLINDAGEM 1: verifica se é do tipo UserDetailsImpl ("crachá")
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuário não autenticado.");
+        }
+
+        //Pega o crachá e extrai o User real de dentro dele
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        User currentUser = userDetails.getUser();
+
+        //BLINDAGEM 2: comparação segura de String
+        //Em vez de variavel.equals("FIXO"), usa "FIXO".equals(variavel).
+        //Se currentUser.getRole() for nulo, isso retorna false em vez de erro.
+        boolean isAdmin = "ROLE_ADMIN".equals(currentUser.getRole());
+
+        //3. Lógica de permissão
+        if (!isAdmin && !currentUser.getId().equals(targetUserId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Você não tem permissão para acessar dados de outro usuário.");
+        }
+    }
+
     //1. CRIAR UM MONITOR
     //URL: POST http://localhost:8080/monitors/user/{userId}
     //Body (JSON): { "name": "Meu Site", "url": "https://site.com", "intervalSeconds": X }
@@ -43,6 +62,9 @@ public class MonitorController {
     public ResponseEntity<MonitorResponseDTO> createMonitor(
             @Valid @RequestBody MonitorCreateDTO createDto,
             @PathVariable Long userId) {
+
+        //Verifica se quem está criando é o próprio dono ou Admin
+        checkUserPermission(userId);
 
         //Converte DTO -> Entity
         Monitor monitorEntity = new Monitor();
@@ -69,11 +91,14 @@ public class MonitorController {
     //URL: GET http://localhost:8080/monitors/user/{userId}
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<MonitorResponseDTO>> getMonitorsByUser(@PathVariable Long userId) {
+        //Verifica se quem está pedindo a lista é o dono ou Admin
+        checkUserPermission(userId);
+
         List<Monitor> monitors = monitorService.findAllByUserId(userId);
 
-        // Stream do Java 8 para converter a lista inteira de Entity para DTO
+        //Stream do Java 8 para converter a lista inteira de Entity para DTO
         List<MonitorResponseDTO> dtos = monitors.stream()
-                .map(this::toResponseDTO) // Chama o método auxiliar pra cada um
+                .map(this::toResponseDTO) //Chama o método auxiliar pra cada um
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(dtos);
@@ -83,6 +108,18 @@ public class MonitorController {
     //URL: DELETE http://localhost:8080/monitors/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMonitor(@PathVariable Long id) {
+        //1. Busca o monitor para saber quem é o dono
+        Monitor existingMonitor = monitorService.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Monitor não encontrado"));
+
+        //2. Descobre o ID do dono
+        Long ownerId = existingMonitor.getUser().getId();
+
+        //3. Verifica permissão (se é o dono OU se é ADMIN)
+        //O método checkUserPermission já tem a lógica.
+        checkUserPermission(ownerId);
+
+        //4. Se passou, deleta
         monitorService.deleteMonitor(id);
         return ResponseEntity.noContent().build();
     }
@@ -91,8 +128,35 @@ public class MonitorController {
     @PutMapping("/{id}")
     public ResponseEntity<MonitorResponseDTO> updateMonitor(@PathVariable Long id,
                                                             @Valid @RequestBody MonitorUpdateDTO updateDto) {
+        //PROBLEMA ANTERIOR: o update recebe ID do Monitor, não do Usuário.
+        //Solução rápida: buscar o monitor para saber de quem ele é
+        Monitor existingMonitor = monitorService.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Monitor não encontrado"));
+
+        //Pega o ID do dono daquele monitor
+        Long ownerId = existingMonitor.getUser().getId();
+
+        //Verifica se o usuário logado é o dono desse monitor
+        checkUserPermission(ownerId);
+
+        //Se passou, manda pro serviço atualizar
         Monitor updatedMonitor = monitorService.updateMonitor(id, updateDto);
         return ResponseEntity.ok(toResponseDTO(updatedMonitor));
+    }
+
+    //5. LISTAR TODOS OS MONITORES (rota global)
+    //URL: GET http://localhost:8080/monitors
+    @GetMapping //Sem nada entre parênteses, ele assume a rota raiz da classe (/monitors)
+    public ResponseEntity<List<MonitorResponseDTO>> getAllMonitors() {
+        //Busca tudo no banco via Service
+        //A segurança desta rota é feita exclusivamente no SecurityConfig (.hasAuthority("ROLE_ADMIN"))
+        List<Monitor> monitors = monitorService.getAllMonitors();
+
+        List<MonitorResponseDTO> dtos = monitors.stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 
     //Mapper auxiliar Entity -> ResponseDTO
