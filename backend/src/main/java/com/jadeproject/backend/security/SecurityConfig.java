@@ -41,7 +41,7 @@ public class SecurityConfig {
                         //Apenas admin vê a lista completa global de monitores (sem filtro de id)
                         .requestMatchers(HttpMethod.GET, "/monitors").hasAuthority("ROLE_ADMIN")
                         //Apenas admin utiliza rotas da busca inteligente (query parameter)
-                        .requestMatchers(HttpMethod.GET, "/users/search").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/users/search").hasAuthority("ROLE_ADMIN")
 
                         //--- 3. ROTAS DE USO COMUM (User & Admin) ---
                         //DELETE /monitors/{id}
