@@ -90,6 +90,9 @@ public class IncidentController {
         dto.setDescription(incident.getDescription());
         dto.setStatus(incident.getStatus());
 
+        dto.setCreatedAt(incident.getCreatedAt());
+        dto.setEndedAt(incident.getEndedAt());
+
         if (incident.getMonitor() != null) {
             dto.setMonitorId(incident.getMonitor().getId());
         }
