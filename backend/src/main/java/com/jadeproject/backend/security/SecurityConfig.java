@@ -32,6 +32,7 @@ public class SecurityConfig {
                         //--- 1. ROTAS PÚBLICAS ---
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users").permitAll() //Cadastro de usuários
+                        .requestMatchers("/fantoche/**").permitAll() //Onde estão os monitores de teste
 
                         //--- 2. ÁREA RESTRITA DO ADMIN ---
                         //Apenas admin vê a lista completa de usuários
