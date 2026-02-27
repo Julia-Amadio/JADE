@@ -41,7 +41,9 @@ public class AuthController {
 
         //3. Se chegou aqui, a senha está correta
         //Pegamos o crachá e extraímos o User real de dentro dele
-        UserDetailsImpl userDetails = (UserDetailsImpl) auth.getPrincipal();
+        if (!(auth.getPrincipal() instanceof UserDetailsImpl userDetails)) {
+            throw new IllegalStateException("Falha interna: principal não é um UserDetailsImpl");
+        }
         User user = userDetails.getUser();
 
         //4. Gera o Token JWT

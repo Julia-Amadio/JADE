@@ -1,6 +1,7 @@
 package com.jadeproject.backend.security;
 
 import com.jadeproject.backend.model.User;
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,16 +11,12 @@ import java.util.List;
 
 public class UserDetailsImpl implements UserDetails{
 
+    @Getter
     private final User user;
 
-    // Construtor: recebe o User do banco e guarda aqui dentro
+    //Construtor: recebe o User do banco e guarda aqui dentro
     public UserDetailsImpl(User user) {
         this.user = user;
-    }
-
-    // Método de Ouro: permite que a gente pegue a entidade User de volta quando precisar!
-    public User getUser() {
-        return user;
     }
 
     @Override
