@@ -21,7 +21,7 @@ public class UserUpdateDTO {
     private String email;
 
     @Size(min = 8, message = "A senha deve ter no mínimo 8 caracteres")
-    @Pattern(regexp = "^[a-zA-Z0-9@#$%^&+=!]+$", message = "Caractere inválido na senha")
-    @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).*$", message = "Senha fraca")
+    //Mantem apenas a regra de força, deletando a regex que restringe os caracteres
+    @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).*$", message = "A senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número.")
     private String password;
 }

@@ -24,6 +24,6 @@ public class UserCreateDTO {
     //@Pattern(regexp = "^[a-zA-Z0-9@#$%^&+=!]+$", message = "Caractere inválido na senha")
     //Removida regex acima pois é muito restritiva (não permite espaço, ç, ~, etc..)
     //Estava sendo utilizado para não permitir emojis. Porém, por sugestão do Gemini (risos..), é melhor deixar o BCrypt lidar com os caracteres.
-    @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).*$", message = "Senha fraca: precisa de maiúscula, minúscula e número")
+    @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).*$", message = "A senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número.")
     private String password;
 }
