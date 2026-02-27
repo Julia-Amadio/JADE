@@ -315,3 +315,46 @@ Além da segurança, foi realizado um "pente fino" no código para elevar o nív
 - Foram removidos os amadores ``System.out.println``, adotando o Lombok ``@Slf4j``. Agora temos logs estruturados com níveis (``INFO``, ``ERROR``, ``WARN``) e timestamp automático.
 - Foi removida a regex restritiva (``^[a-zA-Z0-9...]``) que impedia caracteres especiais. A validação estava bloqueando senhas fortes geradas por gerenciadores de senha e frustrando usuários. Foram mantidas apenas as regras de complexidade mínima e tamanho.
 - O endpoint de criação (``POST /users``) agora retorna explicitamente o status ``201 Created`` ao invés de ``200 OK``. Isso segue a semântica correta do protocolo HTTP para criação de recursos.
+
+# <br>22/02 - Autenticação JWT e controle de acesso ([7941ebb](https://github.com/Julia-Amadio/JADE/commit/7941ebb8e7b7566602d83c78610bec1f3456681b))
+Esta atualização representa um marco na maturidade da API. O sistema deixou de ser um ambiente aberto e passou a contar com um controle de acesso robusto baseado em perfis (RBAC - *Role-Based Access Control*), utilizando tokens JWT e o framework Spring Security.
+
+A implementação seguiu um fluxo lógico, desde a alteração estrutural no banco de dados até a blindagem das rotas nos controllers:
+
+## 1. Estrutura de dados (BD e ```Model```)
+Para que o sistema saiba diferenciar um usuário comum de um administrador, foi necessária a criação de uma hierarquia de privilégios.
+- SQL executado: adição da coluna de papéis na tabela principal.
+```SQL
+ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'ROLE_USER';
+```
+- ```User.java```: a entidade foi atualizada para refletir a nova coluna, garantindo que novos registros nasçam com o privilégio padrão, a menos que especificado o contrário.
+```java
+@Column(nullable = false, length = 20)
+private String role = "ROLE_USER";
+```
+
+## 2. Adaptação do Spring Security (autenticação por email)
+O Spring Security espera, por padrão, que o login seja feito via "Username". Porém, era desejado que o modelo de negócio do JADE utilizasse o e-mail como credencial principal. Duas classes foram implementadas para traduzir essa regra:
+- ```UserDetailsImpl```: implementa a interface ```UserDetails``` do Spring. O método ```getUsername()``` foi sobrescrito para retornar o e-mail do usuário. Esta classe atua como o "crachá" interno do Spring, carregando as permissões e dados do usuário em memória;
+- ```AuthorizationService```: implementa ```UserDetailsService```. O método ```loadUserByUsername``` foi adaptado para realizar a busca no banco de dados através do e-mail, empacotando o usuário encontrado no ```UserDetailsImpl```.
+
+## 3. Gerenciamento de tokens e filtros (pacote ```security```)
+A arquitetura do projeto foi refatorada, movendo o ```SecurityConfig``` para o novo pacote dedicado ```security```, que agora abriga toda a inteligência de validação:
+- ```TokenService```: responsável por gerar e validar os tokens JWT usando a biblioteca do Auth0. O token é assinado com o e-mail (subject) e o papel (role) do usuário, possuindo uma vida útil de 2 horas;
+- ```SecurityFilter```: um filtro que intercepta todas as requisições HTTP antes de chegarem aos controllers. Ele extrai o token do cabeçalho ```Authorization```, valida a assinatura no ```TokenService``` e, se válido, monta o contexto de segurança (```SecurityContextHolder```), avisando ao Spring que aquele usuário está autenticado e possui determinadas permissões;
+- ```SecurityConfig```: além de abrigar o ```PasswordEncoder```, passou a definir o ```SecurityFilterChain```. Aqui as regras globais de rotas foram estabelecidas (ex: apenas ROLE_ADMIN pode deletar usuários, enquanto endpoints de login e cadastro permanecem públicos).
+
+## 4. Endpoints de login (```AuthController```)
+Com a infraestrutura de segurança pronta, foi criado o mecanismo para os usuários obterem suas credenciais:
+- Implementação do ```LoginRequestDTO``` (recebe e-mail e senha) e ```LoginResponseDTO``` (devolve os dados do usuário junto com o token JWT gerado);
+- Criação do ```AuthController```, expondo a rota ```POST /auth/login```, que realiza a autenticação e devolve o token de acesso.
+
+## 5. Blindagem dos controllers e lógica de *ownership*
+O controle de acesso global (URLs) configurado no ```SecurityConfig``` não é suficiente para cenários onde "o Usuário A não pode editar o Monitor do Usuário B". Para isso, verificações granulares foram adicionadas diretamente nos Controllers:
+- Implementação de métodos de segurança (ex: ```checkMonitorOwner```) que extraem o usuário autenticado diretamente do contexto do Spring (```authentication.getPrincipal()```);
+- O sistema agora verifica ativamente a integridade dos dados e cruza os IDs: se o recurso não pertencer ao usuário logado, e ele não possuir a permissão de ```ROLE_ADMIN```, a requisição é interceptada e o Controller lança imediatamente um erro ```403 Forbidden```.
+
+## 6. Novas funcionalidades administrativas
+Aproveitando o novo escopo de privilégios (ROLE_ADMIN), a API foi expandida com recursos de gestão global que usuários comuns não podem acessar:
+- Adição de endpoints para busca inteligente de usuários por *query parameters* (podendo buscar dinamicamente por email ou username);
+- Criação de uma rota ```GET /monitors``` global, permitindo que a administração visualize a lista completa de todos os monitores cadastrados no BD, ignorando os filtros de dono.
