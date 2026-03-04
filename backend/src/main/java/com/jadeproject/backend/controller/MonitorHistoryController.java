@@ -7,6 +7,9 @@ import com.jadeproject.backend.model.User;
 import com.jadeproject.backend.security.UserDetailsImpl;
 import com.jadeproject.backend.service.MonitorHistoryService;
 import com.jadeproject.backend.service.MonitorService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -81,19 +84,31 @@ public class MonitorHistoryController {
         return ResponseEntity.ok(dtos);
     }
 
-    //2. OBTER TUDO (para relatórios)
-    //URL: GET http://localhost:8080/history/all/{monitorId}
-    @GetMapping("/all/{monitorId}")
-    public ResponseEntity<List<MonitorHistoryResponseDTO>> getAllHistory(@PathVariable Long monitorId) {
-        checkMonitorOwner(monitorId); //Idem
+    /*NOVA ROTA PAGINADA (substitui o /all)
+    * URL ex: GET http://localhost:8080/history/monitor/17?page=0&size=20
+    * Faz duas queries. Uma pega os dados da página, a outra conta o total de registros (count query)
+    *   SELECT * FROM monitor_history WHERE monitor_id = 17 ORDER BY checked_at DESC LIMIT 20 OFFSET 0;
+    *   SELECT COUNT(*) FROM monitor_history WHERE monitor_id = 17;
+    * O retorno é um objeto complexo que contém a lista (content),
+    * mais todas as informações matemáticas necessárias para o Frontend (como totalElements, totalPages, isLastPage, etc).*/
+    @GetMapping("/monitor/{monitorId}")
+    public ResponseEntity<Page<MonitorHistoryResponseDTO>> getHistoryPaginated(
+            @PathVariable Long monitorId,
+            @RequestParam(defaultValue = "0") int page, // Começa na página 0 por padrão
+            @RequestParam(defaultValue = "20") int size // Traz 20 itens por padrão
+    ) {
+        checkMonitorOwner(monitorId); // Segurança
 
-        List<MonitorHistory> logs = historyService.getAllLogs(monitorId);
+        //Cria o objeto de paginação
+        Pageable pageable = PageRequest.of(page, size);
 
-        List<MonitorHistoryResponseDTO> dtos = logs.stream()
-                .map(this::toResponseDTO)
-                .collect(Collectors.toList());
+        //Busca do banco de dados (já vem limitado a 20 e conta o total automaticamente)
+        Page<MonitorHistory> logsPage = historyService.getPaginatedLogs(monitorId, pageable);
 
-        return ResponseEntity.ok(dtos);
+        //Converte o Page<Entity> para Page<DTO> em uma linha
+        Page<MonitorHistoryResponseDTO> dtoPage = logsPage.map(this::toResponseDTO);
+
+        return ResponseEntity.ok(dtoPage);
     }
 
     //Método auxiliar de conversão (Entity -> DTO)

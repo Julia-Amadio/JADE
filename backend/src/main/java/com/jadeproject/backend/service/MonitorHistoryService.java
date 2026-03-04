@@ -3,6 +3,8 @@ package com.jadeproject.backend.service;
 import com.jadeproject.backend.model.Monitor;
 import com.jadeproject.backend.model.MonitorHistory;
 import com.jadeproject.backend.repository.MonitorHistoryRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.PageRequest; //Para solicitar X itens
 import org.springframework.data.domain.Sort;
@@ -45,7 +47,7 @@ public class MonitorHistoryService {
     }
 
     //Histórico completo para relatórios detalhados
-    public List<MonitorHistory> getAllLogs(Long monitorId) {
-        return historyRepository.findByMonitorIdOrderByCheckedAtDesc(monitorId);
+    public Page<MonitorHistory> getPaginatedLogs(Long monitorId, Pageable pageable) {
+        return historyRepository.findByMonitorIdOrderByCheckedAtDesc(monitorId, pageable);
     }
 }

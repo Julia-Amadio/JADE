@@ -1,6 +1,7 @@
 package com.jadeproject.backend.repository;
 
 import com.jadeproject.backend.model.MonitorHistory;
+import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Pageable; //Importante para o "Limit 10"
 import org.springframework.stereotype.Repository;
@@ -13,8 +14,10 @@ public interface MonitorHistoryRepository extends JpaRepository<MonitorHistory, 
     //Busca logs de um monitor específico
     //OrderByCheckerAtDesc = ordena pela data (mais novo primeiro)
     //SELECT * FROM monitor_history WHERE monitor_id = ? ORDER BY checked_at DESC
-    List<MonitorHistory> findByMonitorIdOrderByCheckedAtDesc(Long monitorId);
+    Page<MonitorHistory> findByMonitorIdOrderByCheckedAtDesc(Long monitorId, Pageable pageable);
 
     //Busca com paginação para pegar o top 10
+    //Diferente do Page<>, List<> pede um "pedaço" do total dos dados apenas.
+    //Ex.: SELECT * FROM monitor_history WHERE monitor_id = 17 LIMIT 10 OFFSET 0;
     List<MonitorHistory> findByMonitorId(Long monitorId, Pageable pageable);
 }
