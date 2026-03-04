@@ -3,6 +3,7 @@ package com.jadeproject.backend.service;
 import com.jadeproject.backend.model.Monitor;
 import com.jadeproject.backend.repository.MonitorRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import java.time.OffsetDateTime;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Slf4j //Do Lombok para criar logs automaticamente
 @Service
+@ConditionalOnProperty(name = "jade.scheduler.enabled", havingValue = "true", matchIfMissing = true)
 public class MonitorScheduler {
 
     private final MonitorRepository monitorRepository;
