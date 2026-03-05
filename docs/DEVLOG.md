@@ -358,3 +358,27 @@ O controle de acesso global (URLs) configurado no ```SecurityConfig``` não é s
 Aproveitando o novo escopo de privilégios (ROLE_ADMIN), a API foi expandida com recursos de gestão global que usuários comuns não podem acessar:
 - Adição de endpoints para busca inteligente de usuários por *query parameters* (podendo buscar dinamicamente por email ou username);
 - Criação de uma rota ```GET /monitors``` global, permitindo que a administração visualize a lista completa de todos os monitores cadastrados no BD, ignorando os filtros de dono.
+
+# <br> 03/03 - Novas funcionalidades e melhorias de qualidade (QoL)
+
+## 1. Tratamento global de exceções (*Global Exception Handling* - [64fe222](https://github.com/Julia-Amadio/JADE/commit/64fe22283f33025b4c0740d9479ccf2b79491795))
+A API agora possui sistema centralizado para captura e formatação de erros, garantindo que o Frontend (ou o cliente da API) sempre receba respostas padronizadas e previsíveis, independentemente de onde o erro ocorra.
+- Implementação do ```StandardErrorDTO```: criado um DTO base para estabelecer estrutura padrão para todos os erros da aplicação (contendo timestamp, status, error, message e path).
+- Refatoração do ```GlobalExceptionHandler```: os métodos de tratamento existentes foram atualizados para retornar o novo formato padrão.
+- Novos handlers:
+  - Adicionado suporte para ```ResponseStatusException```, capturando erros ```404 Not Found``` e ```403 Forbidden``` lançados dinamicamente nos controllers.
+  - Implementado um "pega-tudo" (Catch-All) para a classe genérica ```Exception```. Isso blinda a API contra erros inesperados (como falhas de banco de dados ou ```NullPointers```), retornando um ```500 Internal Server Error``` limpo e seguro, sem vazar o stack trace (rastro) do código Java para o usuário.
+
+## 2. Controle de execução do ```MonitorScheduler``` ([61c7d6f](https://github.com/Julia-Amadio/JADE/commit/61c7d6fe7631d5d9fcd4568324bb431f687a8e5a))
+Implementação de uma "chave de liga/desliga" para o robô de monitoramento, visando melhorar a experiência de desenvolvimento e testes.
+
+Foi utilizada a anotação ```@ConditionalOnProperty``` na classe ```MonitorScheduler```. Agora, a classe só é instanciada e executada se a propriedade ```jade.scheduler.enabled=true``` estiver definida no arquivo ```application.properties```.
+
+Este controle permite o teste de rotas no Postman sem que o terminal seja poluído com logs contínuos de verificação e evita o inchaço desnecessário do BD de testes.
+
+## 3. Paginação real para o histórico de monitores ([b1f3a1e](https://github.com/Julia-Amadio/JADE/commit/b1f3a1ee57033639ec67a2a555c14f020615ae1c))
+
+A rota que buscava o histórico completo de logs de um monitor foi refatorada para utilizar a paginação nativa do Spring Data JPA, prevenindo futuros problemas com o servidor por falta de memória (```OutOfMemoryError```).
+- A consulta no banco de dados passou de ```List<>``` para ```Page<>```, utilizando a interface ```Pageable```.
+- A API não devolve mais um array infinito de objetos. Ao invés disso, a resposta agora inclui os dados fatiados (```content```) e metadados vitais para o Frontend, como a página atual, total de elementos guardados (```totalElements```) e total de páginas disponíveis (```totalPages```).
+- Queries agora podem ser feitas utilizando parâmetros de URL (ex: ```?page=0&size=20```).
