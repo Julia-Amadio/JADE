@@ -382,3 +382,11 @@ A rota que buscava o histórico completo de logs de um monitor foi refatorada pa
 - A consulta no banco de dados passou de ```List<>``` para ```Page<>```, utilizando a interface ```Pageable```.
 - A API não devolve mais um array infinito de objetos. Ao invés disso, a resposta agora inclui os dados fatiados (```content```) e metadados vitais para o Frontend, como a página atual, total de elementos guardados (```totalElements```) e total de páginas disponíveis (```totalPages```).
 - Queries agora podem ser feitas utilizando parâmetros de URL (ex: ```?page=0&size=20```).
+
+
+# <br> Controle de versão de BD ([01bcdb2](https://github.com/Julia-Amadio/JADE/commit/01bcdb222c63a658884f0f5881d0974f0a7a9a30))
+A gestão do BD agora evolui de uma modelagem manual para migrações automatizadas. Isso garante que o esquema do BD seja versionado junto com o código-fonte, padronizando o ambiente.
+- Desativação do DDL-Auto: a propriedade ```spring.jpa.hibernate.ddl-auto``` foi alterada para ```validate```. O Hibernate não tentará mais criar ou alterar tabelas de forma autônoma, limitando-se apenas a validar se as entidades Java correspondem ao banco real.
+- Integração do Flyway: adicionadas as dependências necessárias no ```pom.xml```.
+- Configuração de baseline: ativada a propriedade ```baseline-on-migrate=true```. Isso permite que o Flyway assumisse o banco de dados já existente no Neon de forma suave, marcando a estrutura atual como a Versão 1, sem tentar recriar tabelas que já estavam lá.
+- Migração inicial (V1): criado o arquivo ```V1__Create_initial_schema.sql``` contendo os comandos (DDL) exatos para a criação das tabelas users, monitors, monitor_history e incidents, consolidando o estado atual da arquitetura.
