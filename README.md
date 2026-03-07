@@ -9,7 +9,7 @@ O projeto é construído sobre a arquitetura MVC/Monolítica utilizando Java 21 
 - **Estratégia de Schema:** configurou-se ``hibernate.ddl-auto=validate``. O Java valida se as Entities (``@Entity``) correspondem exatamente às tabelas criadas no banco, garantindo integridade sem alterar a estrutura automaticamente. 
 - **Boilerplate:** uso da biblioteca Lombok (``@Data``, ``@NoArgsConstructor``) para redução de verbosidade e limpeza do código fonte durante a compilação. 
 - **Segurança de configuração:** credenciais sensíveis (senhas de banco, URLs) são injetadas via variáveis de ambiente no IntelliJ, não constando hardcoded no ``application.properties``, e protegidas via .gitignore. 
-- **Versionamento de banco:** a ferramenta Flyway foi incluída nas dependências para futura migração automatizada, mas mantida inativa (``enabled=false``) nesta fase inicial de modelagem manual.
+- **Versionamento de banco:** o controle de versão do esquema de dados é gerenciado ativamente pelo Flyway. As migrações são executadas automaticamente na inicialização da aplicação, garantindo que qualquer ambiente possua a estrutura exata de tabelas e relacionamentos definida nos scripts SQL.
 
 # Stack
 1. **Java (JDK 21):** linguagem base de todo o backend. Responsável pela lógica de negócio, processamento de dados e execução do servidor.
@@ -19,5 +19,5 @@ O projeto é construído sobre a arquitetura MVC/Monolítica utilizando Java 21 
 5. **Neon:** provedor de hospedagem do banco de dados. Permite que a aplicação (local ou em deploy) acesse os dados via internet sem a necessidade de instalar e configurar um servidor PostgreSQL localmente na máquina do desenvolvedor.
 6. **Spring Data JPA/Hibernate:** transforma as Classes Java (Entities) em tabelas do banco e traduz os comandos Java (como ``.save()`` ou ``.findAll()``) para comandos SQL (``INSERT``, ``SELECT``), evitando necessidade de escrever SQL puro manualmente.
 7. **Lombok:** biblioteca Java que se conecta ao editor e ao compilador para automatizar a geração de código repetitivo (boilerplate), mantendo ele limpo. Através de anotações (como ``@Data``), ele cria automaticamente getters, setters, construtores e métodos ``toString()`` em tempo de compilação, reduzindo drasticamente o tamanho dos arquivos de classe.
-8. **Flyway:** configurado para garantir a integridade futura. Atualmente inativo (``enabled=false``) enquanto o banco é moldado manualmente (por meio do SQL Editor do Neon), será responsável por aplicar scripts SQL de migração automaticamente quando o projeto for para produção.
+8. **Flyway:** ferramenta de controle de versão de banco de dados. Intercepta a inicialização do Spring Boot para aplicar scripts de migração SQL (DDL). Ele garante que o banco de dados do Neon (ou qualquer banco local configurado via fork) esteja sempre perfeitamente sincronizado com a versão atual do código Java, substituindo a criação manual de tabelas.
 9. **IntelliJ IDEA (ambiente):** IDE para Java. Além de editar o código, gerencia a estrutura de pastas e, crucialmente, simula o ambiente de produção injetando variáveis de ambiente (senhas e credenciais) de forma segura durante os testes locais.
