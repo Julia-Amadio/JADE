@@ -1,0 +1,59 @@
+/* Importando a fonte direto no CSS caso não tenha colocado no HTML */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root {
+  /* Paleta de cores */
+  --bg-color: #ffffff;
+  --text-main: #111111;
+  --text-muted: #666666;
+  --border-color: #111111;
+
+  /* Cores de status */
+  --jade-green: #10B981;
+  --alert-red: #EF4444;
+
+  /* Sombras (sólida, sem desfoque) */
+  --shadow-brutal: 4px 4px 0px 0px var(--border-color);
+  --shadow-brutal-hover: 2px 2px 0px 0px var(--border-color);
+}
+
+/* Reset básico para garantir que todos os navegadores se comportem igual */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'JetBrains Mono', monospace;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Garante que o body ocupe a tela toda para a sidebar funcionar */
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Estilo base para todos os botões */
+button {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  cursor: pointer;
+  border: 2px solid var(--border-color);
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-brutal);
+}
+
+/* Limpa o visual padrão de links */
+a {
+  text-decoration: none;
+  color: inherit;
+}
