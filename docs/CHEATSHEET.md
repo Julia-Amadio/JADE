@@ -46,3 +46,21 @@ Para uso no escopo deste projeto.
 | Shift + F6     | **Renomear:** renomeia uma variável/classe e atualiza todas as referências no projeto inteiro. |
 | Ctrl + D       | Duplica a linha atual.                                                                         |
 | Ctrl + Y       | Apaga a linha atual.                                                                           |
+
+# React 
+1. Cria a pasta do frontend usando o template do React
+    ``` 
+    npm create vite@latest frontend -- --template react
+    ```  
+2. Entra na pasta que acabou de ser criada
+    ```
+    cd frontend
+    ```
+3. Instala as dependências base do React
+    ```
+    npm install
+    ```
+4. Instala a biblioteca de rotas (para trocar de Monitores para Relatórios, por exemplo) e uma de ícones limpos
+    ```
+    npm install react-router-dom lucide-react
+    ```
