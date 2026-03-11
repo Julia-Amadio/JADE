@@ -384,9 +384,26 @@ A rota que buscava o histórico completo de logs de um monitor foi refatorada pa
 - Queries agora podem ser feitas utilizando parâmetros de URL (ex: ```?page=0&size=20```).
 
 
-# <br> Controle de versão de BD ([01bcdb2](https://github.com/Julia-Amadio/JADE/commit/01bcdb222c63a658884f0f5881d0974f0a7a9a30))
+# <br> 08/03 - Controle de versão de BD ([01bcdb2](https://github.com/Julia-Amadio/JADE/commit/01bcdb222c63a658884f0f5881d0974f0a7a9a30))
 A gestão do BD agora evolui de uma modelagem manual para migrações automatizadas. Isso garante que o esquema do BD seja versionado junto com o código-fonte, padronizando o ambiente.
 - Desativação do DDL-Auto: a propriedade ```spring.jpa.hibernate.ddl-auto``` foi alterada para ```validate```. O Hibernate não tentará mais criar ou alterar tabelas de forma autônoma, limitando-se apenas a validar se as entidades Java correspondem ao banco real.
 - Integração do Flyway: adicionadas as dependências necessárias no ```pom.xml```.
 - Configuração de baseline: ativada a propriedade ```baseline-on-migrate=true```. Isso permite que o Flyway assumisse o banco de dados já existente no Neon de forma suave, marcando a estrutura atual como a Versão 1, sem tentar recriar tabelas que já estavam lá.
 - Migração inicial (V1): criado o arquivo ```V1__Create_initial_schema.sql``` contendo os comandos (DDL) exatos para a criação das tabelas users, monitors, monitor_history e incidents, consolidando o estado atual da arquitetura.
+
+
+# <br> 10/03 - Configuração de CORS e setup do Frontend com React + Vite ([4e4d94c](https://github.com/Julia-Amadio/JADE/commit/4e4d94c51cf110858fd08fcb14c9ca4b09522315))
+
+## 1. Resolução de bloqueio de comunicação (CORS)
+Para permitir que a futura interface web comunique com a API REST sem ser bloqueada pela política de segurança dos navegadores (*Same-Origin Policy*), foi implementada a configuração global de CORS no Spring Boot.
+- **Criação da classe `WebConfig.java`:** adicionada ao pacote `config`, implementa a interface `WebMvcConfigurer`.
+- **Mapeamento de origens permitidas:** o método `addCorsMappings` foi sobrescrito para permitir o acesso a todos os *endpoints* da API (`/**`) a partir dos endereços de desenvolvimento locais (`http://localhost:5173` para o Vite e `http://localhost:3000` como redundância para padrões Node).
+- **Métodos e cabeçalhos:** foram explicitamente permitidos os métodos HTTP essenciais (`GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`, `PATCH`), o envio de qualquer cabeçalho e a partilha de credenciais/cookies (`allowCredentials(true)`).
+
+## 2. Setup inicial do Frontend (React)
+A fundação da interface de utilizador foi inicializada utilizando a ferramenta **Vite** com o *template* do **React**. A arquitetura foi estruturada no terminal para que a nova pasta `frontend` e a pasta `backend` coexistam como diretórios "irmãos" na raiz do repositório, mantendo a separação clara de responsabilidades.
+- **Dependências base:** instalação do `react-router-dom` para a futura gestão das rotas da aplicação (transição entre o ecrã de Monitores, Relatórios e Configurações) e do `lucide-react` para a iconografia.
+- **Identidade visual e tipografia:**
+    - O CSS *boilerplate* gerado nativamente pelo Vite foi totalmente removido para não interferir no layout.
+    - A fonte **JetBrains Mono** foi importada via Google Fonts e definida como tipografia global.
+- **Variáveis de estilo:** o ficheiro `index.css` foi reestruturado com variáveis nativas do CSS (`:root`) para centralizar a paleta de cores.
