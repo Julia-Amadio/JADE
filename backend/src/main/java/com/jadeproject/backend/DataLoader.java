@@ -22,13 +22,14 @@ public class DataLoader {
             //1. CRIAR USUÁRIO
             //Usa findByUsername para não tentar criar duplicado e tomar erro do Service
             User user;
-            Optional<User> existingUser = userService.findByUsername("julia_admin");
+            Optional<User> existingUser = userService.findByUsername("jade_admin");
 
             if (existingUser.isEmpty()) {
                 User newUser = new User();
-                newUser.setUsername("julia_admin");
-                newUser.setEmail("julia@jade.com");
-                newUser.setPasswordHash("123456789");
+                newUser.setUsername("jade_admin");
+                newUser.setEmail("jadeadmin@example.com");
+                newUser.setPasswordHash("SenhaForte123!");
+                newUser.setRole("ROLE_ADMIN");
 
                 user = userService.registerUser(newUser);
                 System.out.println("Usuário criado: " + user.getUsername());

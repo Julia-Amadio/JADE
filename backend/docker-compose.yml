@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  # Serviço do BD local para testes
+  db:
+    image: postgres:15-alpine
+    container_name: jade-postgres-test
+    restart: unless-stopped
+    environment:
+      # Valores fixos APENAS para o banco local do tester.
+      POSTGRES_USER: tester_jade
+      POSTGRES_PASSWORD: tester_password
+      POSTGRES_DB: jade_local_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - jade_local_data:/var/lib/postgresql/data
+
+volumes:
+  jade_local_data:
