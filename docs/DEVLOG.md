@@ -407,3 +407,16 @@ A fundação da interface de utilizador foi inicializada utilizando a ferramenta
     - O CSS *boilerplate* gerado nativamente pelo Vite foi totalmente removido para não interferir no layout.
     - A fonte **JetBrains Mono** foi importada via Google Fonts e definida como tipografia global.
 - **Variáveis de estilo:** o ficheiro `index.css` foi reestruturado com variáveis nativas do CSS (`:root`) para centralizar a paleta de cores.
+
+
+# <br> 14/03 - Configuração de ambiente local (Docker) e Fallback de Banco de Dados ([823595c](https://github.com/Julia-Amadio/JADE/commit/823595c03e66db4d903cdbbdbd3da972baac59d5))
+
+## 1. Containerização do Banco de Dados para testes
+Para facilitar o processo de *onboarding* de outros desenvolvedores e a avaliação do projeto por terceiros, foi implementada uma infraestrutura local de banco de dados.
+- **Criação do `docker-compose.yml`:** adicionado um serviço encapsulado do PostgreSQL 15 (`jade-postgres-test`) mapeado para a porta `5433`.
+- **Independência da Nuvem:** elimina a obrigatoriedade de configurar uma instância remota no Neon DB apenas para clonar e testar o funcionamento do JADE localmente, isolando o ambiente de testes dos dados de produção.
+
+## 2. Estratégia de Fallback inteligente
+O arquivo `application.properties` foi refatorado para suportar múltiplos ambientes de forma transparente, utilizando o recurso de *fallback* nativo do Spring Boot.
+- **Variáveis dinâmicas:** as credenciais agora seguem o padrão `${VARIAVEL_DE_AMBIENTE:valor_padrao}`.
+- **Transição suave:** se as variáveis da nuvem (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`) forem injetadas, o Spring conecta ao Neon. Se o projeto for clonado cru, o Spring assume automaticamente os valores padrão apontando para o contêiner Docker (`jdbc:postgresql://localhost:5433/jade_local_db`, usuário `tester_jade` e senha `tester_password`).
