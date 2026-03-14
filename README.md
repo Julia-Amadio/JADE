@@ -73,39 +73,51 @@ A API implementa um sistema robusto de controle de acesso baseado nos papéis do
 
 ## Como executar
 
-Para executar este projeto localmente, você precisará de:
+Para facilitar a avaliação do projeto, o backend está configurado para rodar em um banco de dados local isolado via Docker, sem a necessidade de configurar variáveis de ambiente ou credenciais na nuvem.
 
-*   Java (JDK 21)
-*   Maven
-*   Um banco de dados PostgreSQL (você pode usar uma instância local ou um provedor em nuvem gratuito como o [Neon](https://neon.tech/))
-*   Node.js e npm (para o frontend)
+**Pré-requisitos:**
+*   [Java (JDK 21)](https://www.oracle.com/br/java/technologies/downloads/#java21);
+*   [Docker Desktop](https://www.docker.com/products/docker-desktop) (o mesmo precisa já estar rodando na máquina antes da inicialização do *backend*);
+*   [Node.js](https://nodejs.org/en/download) e npm (para o *frontend*).
+
+Não é necessário ter o Maven instalado, usaremos o *Wrapper* incluído no projeto.
 
 ### Setup do backend
-
-1.  **Clone o repositório:**
+1.  **Clone o repositório e navegue até a pasta do backend**
     ```bash
     git clone https://github.com/Julia-Amadio/JADE.git
     cd JADE/backend
     ```
+2.  **Inicie o Banco de Dados local (PostgreSQL):** 
 
-2.  **Configure as variáveis de ambiente:**
-    A aplicação usa variáveis de ambiente para dados sensíveis. Na sua IDE (como o IntelliJ), crie uma configuração de execução e defina as seguintes variáveis:
-    *   `DB_URL`: a URL JDBC para seu banco de dados PostgreSQL (ex: `jdbc:postgresql://...`)
-    *   `DB_USER`: seu nome de usuário do banco de dados.
-    *   `DB_PASSWORD`: sua senha do banco de dados.
-
-3.  **Habilite o agendador (opcional):**
-    O agendador de monitoramento é desabilitado por padrão para facilitar o desenvolvimento. Para habilitá-lo, adicione a seguinte linha em `src/main/resources/application.properties`:
-    ```properties
-    jade.scheduler.enabled=true
-    ```
-
-4.  **Execute a aplicação:**
-    As migrações do Flyway serão executadas automaticamente na primeira inicialização, criando as tabelas necessárias.
+    Suba o contêiner do banco de dados na porta 5433.
     ```bash
-    mvn spring-boot:run
+    docker-compose up -d
     ```
-    A API estará disponível em `http://localhost:8080`.
+3.  **Execute a aplicação Spring Boot:** 
+
+    Utilize o Maven Wrapper para baixar as dependências, compilar e rodar o projeto. O Flyway detectará o banco zerado e criará as tabelas automaticamente.
+
+    *No Windows:*
+    ```bash
+    .\mvnw spring-boot:run
+    ```
+    *No Linux/Mac:*
+    ```bash
+    ./mvnw spring-boot:run
+    ```
+4.  **Explore a API no Postman/Insomnia:**
+
+    Assim que a aplicação iniciar (*porta 8080*), o script `DataLoader.java` injetará automaticamente os seguintes dados para facilitar o teste imediato:
+   - 1 Usuário Admin (com permissões RBAC totais).
+   - 4 Monitores "Fantoches" apontando para endpoints internos da própria API (`/fantoche/up`, `/fantoche/down`, `/fantoche/slow`, `/fantoche/random`). O motor de agendamento em background (`MonitorScheduler`) já começará a realizar os pings automaticamente e gerar os históricos de latência e de incidentes.
+
+5.  **Encerrando o ambiente**
+
+    Para desligar a aplicação Spring Boot, pressione **Ctrl + C** no terminal. Para desligar e remover o banco de dados do Docker, execute:
+    ```bash
+    docker-compose down
+    ```
 
 ### Setup do frontend
 
@@ -124,29 +136,3 @@ Para executar este projeto localmente, você precisará de:
     npm run dev
     ```
     A aplicação React estará disponível em `http://localhost:5173`.
-
----
-
-## Visão geral dos endpoints da API
-
-A API fornece os seguintes recursos principais:
-
-*   **Autenticação:**
-    *   `POST /auth/login`: autentica um usuário e retorna um JWT.
-*   **Usuários:**
-    *   `POST /users`: registra um novo usuário.
-    *   `GET /users`: lista todos os usuários (somente Admin).
-    *   `GET /users/{id}`: obtém detalhes de um usuário.
-    *   `PUT /users/{id}`: atualiza um usuário.
-    *   `DELETE /users/{id}`: deleta um usuário.
-*   **Monitores:**
-    *   `POST /monitors`: cria um novo monitor.
-    *   `GET /monitors`: lista todos os monitores do usuário logado (ou todos para Admin).
-    *   `GET /monitors/{id}`: obtém detalhes de um monitor.
-    *   `PUT /monitors/{id}`: atualiza um monitor.
-    *   `DELETE /monitors/{id}`: deleta um monitor.
-*   **Histórico e incidentes:**
-    *   `GET /monitors/{monitorId}/history`: obtém o histórico paginado de um monitor.
-    *   `GET /monitors/{monitorId}/incidents`: obtém os incidentes de um monitor.
-
-*Esta é uma visão simplificada. Por favor, consulte a camada `controllers` no código-fonte para formatos detalhados de requisição/resposta.*
