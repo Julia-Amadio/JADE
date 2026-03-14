@@ -83,7 +83,7 @@ Para facilitar a avaliação do projeto, o backend está configurado para rodar 
 Não é necessário ter o Maven instalado, usaremos o *Wrapper* incluído no projeto.
 
 ### Setup do backend
-1.  **Clone o repositório e navegue até a pasta do backend**
+1.  **Clone o repositório e navegue até a pasta do backend:**
     ```bash
     git clone https://github.com/Julia-Amadio/JADE.git
     cd JADE/backend
@@ -112,7 +112,7 @@ Não é necessário ter o Maven instalado, usaremos o *Wrapper* incluído no pro
    - 1 Usuário Admin (com permissões RBAC totais).
    - 4 Monitores "Fantoches" apontando para endpoints internos da própria API (`/fantoche/up`, `/fantoche/down`, `/fantoche/slow`, `/fantoche/random`). O motor de agendamento em background (`MonitorScheduler`) já começará a realizar os pings automaticamente e gerar os históricos de latência e de incidentes.
 
-5.  **Encerrando o ambiente**
+5.  **Encerrando o ambiente:**
 
     Para desligar a aplicação Spring Boot, pressione **Ctrl + C** no terminal. Para desligar e remover o banco de dados do Docker, execute:
     ```bash
