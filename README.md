@@ -122,7 +122,7 @@ Não é necessário ter o Maven instalado, usaremos o *Wrapper* incluído no pro
     npm install
     ```
 
-3.  ** Inicie o servidor de desenvolvimento:**
+3.  **Inicie o servidor de desenvolvimento:**
     ```bash
     npm run dev
     ```
@@ -132,11 +132,11 @@ Não é necessário ter o Maven instalado, usaremos o *Wrapper* incluído no pro
 
 Quando terminar de testar, você pode derrubar os serviços da seguinte forma:
 
-1. Frontend e Backend:
+1. **Frontend e Backend:**
 
    Pressione `Ctrl + C` nos terminais onde as aplicações estão rodando.
 
-3. Banco de Dados:
+3. **Banco de Dados:**
 
    No terminal, dentro da pasta `backend`, execute o comando abaixo para parar e remover o contêiner do Docker:
    ```bash
