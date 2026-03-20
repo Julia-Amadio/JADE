@@ -19,16 +19,16 @@ O backend está totalmente implementado e o frontend está em desenvolvimento ut
 
 ## Tech stack
 
-| Categoria               | Tecnologia                                                                                                                                                             |
-|-------------------------| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Backend**             | [Java 21](https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html) + [Spring Boot 3](https://spring.io/projects/spring-boot)                         |
-| **Frontend**            | [React](https://react.dev/) + [Vite](https://vitejs.dev/)                                                                                                              |
-| **Banco de dados**      | [PostgreSQL](https://www.postgresql.org/) (hospedado em [Neon.tech](https://neon.tech/))                                                                                    |
-| **ORM**                 | [Spring Data JPA](https://spring.io/projects/spring-data-jpa) (Hibernate)                                                                                              |
-| **Migração de BD**      | [Flyway](https://flywaydb.org/)                                                                                                                                        |
-| **Autenticação**        | [Spring Security](https://spring.io/projects/spring-security) + [JWT](https://jwt.io/)                                                                                 |
-| **Build tool**          | [Maven](https://maven.apache.org/)                                                                                                                                     |
-| **Qualidade de código** | [Lombok](https://projectlombok.org/)                                                                                                                                   |
+| Categoria               | Tecnologia                                                                                                                                        |
+|-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Backend**             | [Java 21](https://www.oracle.com/java/technologies/javase/jdk21-archive-downloads.html) + [Spring Boot 4](https://spring.io/projects/spring-boot) |
+| **Frontend**            | [React](https://react.dev/) + [Vite](https://vitejs.dev/)                                                                                         |
+| **Banco de dados**      | [PostgreSQL](https://www.postgresql.org/) (hospedado em [Neon.tech](https://neon.tech/))                                                          |
+| **ORM**                 | [Spring Data JPA](https://spring.io/projects/spring-data-jpa) (Hibernate)                                                                         |
+| **Migração de BD**      | [Flyway](https://flywaydb.org/)                                                                                                                   |
+| **Autenticação**        | [Spring Security](https://spring.io/projects/spring-security) + [JWT](https://jwt.io/)                                                            |
+| **Build tool**          | [Maven](https://maven.apache.org/)                                                                                                                |
+| **Qualidade de código** | [Lombok](https://projectlombok.org/)                                                                                                              |
 
 ---
 
