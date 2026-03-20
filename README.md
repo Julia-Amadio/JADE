@@ -82,7 +82,7 @@ Para facilitar a avaliação do projeto, o backend está configurado para rodar 
 
 Não é necessário ter o Maven instalado, usaremos o *Wrapper* incluído no projeto.
 
-### Setup do backend
+### 1) Setup do backend
 1.  **Clone o repositório e navegue até a pasta do backend:**
     ```bash
     git clone https://github.com/Julia-Amadio/JADE.git
@@ -108,18 +108,9 @@ Não é necessário ter o Maven instalado, usaremos o *Wrapper* incluído no pro
     ```
 4.  **Explore a API no Postman/Insomnia:**
 
-    Assim que a aplicação iniciar (*porta 8080*), o script `DataLoader.java` injetará automaticamente os seguintes dados para facilitar o teste imediato:
-   - 1 Usuário Admin (com permissões RBAC totais).
-   - 4 Monitores "Fantoches" apontando para endpoints internos da própria API (`/fantoche/up`, `/fantoche/down`, `/fantoche/slow`, `/fantoche/random`). O motor de agendamento em background (`MonitorScheduler`) já começará a realizar os pings automaticamente e gerar os históricos de latência e de incidentes.
+    Assim que a aplicação iniciar (*porta 8080*), o script `DataLoader.java` injetará automaticamente um Usuário Admin e 4 Monitores "Fantoches". O motor de agendamento em background já começará a realizar os pings e gerar históricos de latência.
 
-5.  **Encerrando o ambiente:**
-
-    Para desligar a aplicação Spring Boot, pressione **Ctrl + C** no terminal. Para desligar e remover o banco de dados do Docker, execute:
-    ```bash
-    docker-compose down
-    ```
-
-### Setup do frontend
+### 2) Setup do frontend
 
 1.  **Navegue até o diretório do frontend:**
     ```bash
@@ -131,8 +122,23 @@ Não é necessário ter o Maven instalado, usaremos o *Wrapper* incluído no pro
     npm install
     ```
 
-3.  **Execute o servidor de desenvolvimento:**
+3.  **Inicie o servidor de desenvolvimento:**
     ```bash
     npm run dev
     ```
     A aplicação React estará disponível em `http://localhost:5173`.
+
+### 3) Encerrando a aplicação
+
+Quando terminar de testar, você pode derrubar os serviços da seguinte forma:
+
+1. **Frontend e Backend:**
+
+   Pressione `Ctrl + C` nos terminais onde as aplicações estão rodando.
+
+3. **Banco de Dados:**
+
+   No terminal, dentro da pasta `backend`, execute o comando abaixo para parar e remover o contêiner do Docker:
+   ```bash
+   docker-compose down
+   ```
