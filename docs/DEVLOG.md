@@ -420,3 +420,21 @@ Para facilitar o processo de *onboarding* de outros desenvolvedores e a avaliaç
 O arquivo `application.properties` foi refatorado para suportar múltiplos ambientes de forma transparente, utilizando o recurso de *fallback* nativo do Spring Boot.
 - **Variáveis dinâmicas:** as credenciais agora seguem o padrão `${VARIAVEL_DE_AMBIENTE:valor_padrao}`.
 - **Transição suave:** se as variáveis da nuvem (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`) forem injetadas, o Spring conecta ao Neon. Se o projeto for clonado cru, o Spring assume automaticamente os valores padrão apontando para o contêiner Docker (`jdbc:postgresql://localhost:5433/jade_local_db`, usuário `tester_jade` e senha `tester_password`).
+
+
+# <br> 20/03 - Documentação da API com Swagger/OpenAPI e Melhorias de Observabilidade
+
+Para facilitar o consumo da API por futuros clientes (como o Frontend em React) e agilizar os testes manuais, foi implementada a documentação interativa automatizada utilizando o padrão OpenAPI (Swagger).
+
+## 1. Setup e configuração do SpringDoc
+A infraestrutura de documentação foi adicionada e adaptada para suportar as características arquiteturais do JADE:
+- **Dependência:** inclusão da biblioteca `springdoc-openapi-starter-webmvc-ui` no `pom.xml`, que escaneia o código e gera a interface gráfica automaticamente no endpoint `/swagger-ui/index.html`.
+- **Suporte a paginação:** como a API utiliza paginação nativa, foi adicionada a propriedade `springdoc.model-converters.pageable-converter.enabled=true` no `application.properties`. Isso garante que o Swagger traduza corretamente a interface `Pageable` do Spring, renderizando os parâmetros de URL (`page`, `size`, `sort`) de forma amigável na tela.
+
+## 2. Configuração de segurança (JWT / Bearer Auth)
+Como o sistema é protegido por RBAC através de JWT, é necessário "ensinar" o Swagger a lidar com a autenticação:
+- **Classes de configuração:** criação dos arquivos `SwaggerConfig` (e `OpenApiConfig`) dentro do pacote `config`. Estas classes utilizam anotações como `@OpenAPIDefinition` e `@SecurityScheme` para definir os metadados globais da API (título, versão) e estabelecer o esquema de segurança do tipo HTTP Bearer.
+- **Blindagem visual das rotas:** adição da anotação `@SecurityRequirement(name = "bearerAuth")` em todos os Controllers e rotas específicas que exigem autenticação. Isso ativa o ícone de "cadeado" (🔒) na interface do Swagger, forçando o envio do token JWT no cabeçalho `Authorization` durante as requisições de teste, respeitando a lógica de *ownership* e privilégios de administrador.
+
+## 3. Aprimoramento no Tratamento Global de Exceções
+O método que atua como *Catch-All* para erros 500 agora utiliza `log.error()`, registrando a rota exata onde a falha ocorreu e a *stack trace* padronizada no console. Isso previne a perda de logs em ambientes de produção e prepara o terreno para ferramentas futuras de monitoramento.
