@@ -8,6 +8,7 @@ import com.jadeproject.backend.model.User;
 import com.jadeproject.backend.security.UserDetailsImpl;
 import com.jadeproject.backend.service.MonitorService;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@SecurityRequirement(name = "bearerAuth")
 @RestController //Diz ao Spring: "eu respondo requisições HTTP e devolvo JSON"
 @RequestMapping("/monitors") //Todas as URLs aqui começam com /monitors
 public class MonitorController {

@@ -6,6 +6,7 @@ import com.jadeproject.backend.dto.UserUpdateDTO;
 import com.jadeproject.backend.model.User;
 import com.jadeproject.backend.security.UserDetailsImpl;
 import com.jadeproject.backend.service.UserService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -92,6 +93,7 @@ public class UserController {
     //Exemplos de URLs válidas:
     //GET http://localhost:8080/users/search?username=julia.jade
     //GET http://localhost:8080/users/search?email=julia@jade.com
+    @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/search")
     public ResponseEntity<UserResponseDTO> searchUser(
             @RequestParam(required = false) String username,
@@ -116,6 +118,7 @@ public class UserController {
 
     //3. UPDATE USUÁRIO
     //Add segurança, da mesma forma
+    @SecurityRequirement(name = "bearerAuth")
     @PutMapping("/{id}")
     public ResponseEntity<UserResponseDTO> updateUser(@PathVariable Long id,
                                                       @Valid @RequestBody UserUpdateDTO updateDto) {
@@ -128,8 +131,11 @@ public class UserController {
 
     //4. LISTAR TODOS OS USUÁRIOS (ADMIN ONLY, protegido pelo SecurityConfig)
     //URL: GET http://localhost:8080/users
+    @SecurityRequirement(name = "bearerAuth")
     @GetMapping
     public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
+        checkAdminPermission();
+
         //Busca a lista de entidades
         List<User> users = userService.findAllUsers();
 

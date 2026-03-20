@@ -14,7 +14,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -87,7 +89,11 @@ public class GlobalExceptionHandler {
     //5. Catch-all (para erros inesperados 500)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<StandardErrorDTO> handleAllUncaughtException(Exception ex, HttpServletRequest request) {
-        //Podemos colocar um log.error("Erro inesperado", ex) para registrar no terminal
+
+        //Imprime a Stack Trace APENAS no terminal
+        //Não vai para o Postman, nem para o Navegador, nem para o Swagger
+        log.error("Erro interno inesperado detectado na rota {}: ", request.getRequestURI(), ex);
+
         StandardErrorDTO errorResponse = StandardErrorDTO.builder()
                 .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
@@ -96,6 +102,7 @@ public class GlobalExceptionHandler {
                 .path(request.getRequestURI())
                 .build();
 
+        //Cliente continua recebendo a resposta blindada
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }

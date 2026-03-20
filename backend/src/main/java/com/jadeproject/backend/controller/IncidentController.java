@@ -7,6 +7,7 @@ import com.jadeproject.backend.model.User;
 import com.jadeproject.backend.security.UserDetailsImpl;
 import com.jadeproject.backend.service.IncidentService;
 import com.jadeproject.backend.service.MonitorService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -17,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.stream.Collectors;
 import java.util.List;
 
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/incidents")
 public class IncidentController {

@@ -29,36 +29,28 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
+                        //--- 0. SWAGGER / OPENAPI (DOCS) ---
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+
                         //--- 1. ROTAS PÚBLICAS ---
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users").permitAll() //Cadastro de usuários
-                        .requestMatchers("/fantoche/**").permitAll() //Onde estão os monitores de teste
+                        .requestMatchers("/fantoche/**").permitAll() //Monitores de teste
 
                         //--- 2. ÁREA RESTRITA DO ADMIN ---
-                        //Apenas admin vê a lista completa de usuários
                         .requestMatchers(HttpMethod.GET, "/users").hasAuthority("ROLE_ADMIN")
-                        //Apenas admin deleta usuários
                         .requestMatchers(HttpMethod.DELETE, "/users/**").hasAuthority("ROLE_ADMIN")
-                        //Apenas admin vê a lista completa global de monitores (sem filtro de id)
                         .requestMatchers(HttpMethod.GET, "/monitors").hasAuthority("ROLE_ADMIN")
-                        //Apenas admin utiliza rotas da busca inteligente (query parameter)
+                        //Busca inteligente (query parameter)
                         .requestMatchers(HttpMethod.GET, "/users/search").hasAuthority("ROLE_ADMIN")
 
                         //--- 3. ROTAS DE USO COMUM (User & Admin) ---
-                        //DELETE /monitors/{id}
-                        //A segurança de "quem é dono de qual" é feita DENTRO do Controller
-                        .requestMatchers(HttpMethod.DELETE, "/monitors/**").authenticated()
-
-                        //POST, PUT e GET /user/{id}
                         //Todos autenticados podem tentar. O Controller verifica se o ID bate
                         .requestMatchers("/monitors/**").authenticated()
-
-                        //Histórico e Incidentes
-                        //Admin pode ver tudo, User só o seu. O Controller dessas rotas deve validar
                         .requestMatchers("/history/**").authenticated()
                         .requestMatchers("/incidents/**").authenticated()
 
-                        //Qualquer outra coisa exige autenticação
+                        //Qualquer outra coisa (incluindo PUT e GET /users/{id}) exige autenticação
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter.class)

@@ -7,6 +7,7 @@ import com.jadeproject.backend.model.User;
 import com.jadeproject.backend.security.UserDetailsImpl;
 import com.jadeproject.backend.service.MonitorHistoryService;
 import com.jadeproject.backend.service.MonitorService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/history")
 public class MonitorHistoryController {
