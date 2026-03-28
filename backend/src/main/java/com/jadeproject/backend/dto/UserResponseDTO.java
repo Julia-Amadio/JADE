@@ -10,4 +10,5 @@ public class UserResponseDTO {
     private String username;
     private String email;
     private OffsetDateTime createdAt;
+    private String role;
 }
