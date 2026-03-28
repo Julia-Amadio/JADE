@@ -50,6 +50,12 @@ public class AuthController {
         String token = tokenService.generateToken(user);
 
         //5. Retornamos o DTO de resposta com Email, Nome e Token
-        return ResponseEntity.ok(new LoginResponseDTO(user.getEmail(), user.getUsername(), token));
+        //Agora usa o builder gerado pelo @Builder
+        return ResponseEntity.ok(LoginResponseDTO.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .name(user.getUsername())
+                .token(token)
+                .build());
     }
 }
