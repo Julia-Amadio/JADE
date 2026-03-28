@@ -15,6 +15,7 @@ import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @RestControllerAdvice
@@ -104,5 +105,33 @@ public class GlobalExceptionHandler {
 
         //Cliente continua recebendo a resposta blindada
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    //6. Rota não encontrada
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<StandardErrorDTO> handleNoResourceFound(
+            NoResourceFoundException ex, HttpServletRequest request) {
+        StandardErrorDTO errorResponse = StandardErrorDTO.builder()
+                .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
+                .status(HttpStatus.NOT_FOUND.value())
+                .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+                .message("Rota não encontrada: " + request.getRequestURI())
+                .path(request.getRequestURI())
+                .build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    //7. Registro não encontrado
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<StandardErrorDTO> handleNotFound(
+            ResourceNotFoundException ex, HttpServletRequest request) {
+        StandardErrorDTO error = StandardErrorDTO.builder()
+                .timestamp(OffsetDateTime.now(ZoneOffset.UTC))
+                .status(HttpStatus.NOT_FOUND.value())
+                .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 }
