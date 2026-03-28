@@ -22,6 +22,7 @@ public class MonitorService {
     private final MonitorRepository monitorRepository;
     private final UserService userService; //Precisa validar se o dono existe!
     private static final int MIN_INTERVAL_SECONDS = 30;
+    private static final int MAX_INTERVAL_SECONDS = 86400;
 
     public MonitorService(MonitorRepository monitorRepository, UserService userService) {
         this.monitorRepository = monitorRepository;
@@ -37,9 +38,14 @@ public class MonitorService {
         //1. Validar se o usuário dono existe
         User user = userService.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Erro: Usuário não encontrado para ID " + userId));
 
-        //2. NOVA VALIDAÇÃO: usuário deve inserir intervalo mínimo de 30 segundos entre pings
+        //2.1. Usuário deve inserir intervalo mínimo de 30 segundos entre pings
         if (monitor.getIntervalSeconds() < MIN_INTERVAL_SECONDS) {
             throw new RuntimeException("O intervalo mínimo permitido é de " + MIN_INTERVAL_SECONDS + " segundos.");
+        }
+
+        //2.2. Usuário deve inserir intervalo máximo de 86400 segundos (24h) entre pings
+        if (monitor.getIntervalSeconds() < MAX_INTERVAL_SECONDS) {
+            throw new RuntimeException("O intervalo máximo permitido é de " + MAX_INTERVAL_SECONDS + " segundos.");
         }
 
         //3. Validar regra de negócio: nome único (escopo do usuário)
