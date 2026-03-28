@@ -17,6 +17,7 @@ public class MonitorCreateDTO {
 
     @Min(value = 30, message = "O intervalo mínimo é 30 segundos")
     @Max(value = 86400, message = "O intervalo máximo é 1 dia (86400s)")
+    @NotNull(message = "O intervalo é obrigatório")
     private Integer intervalSeconds;
 
     private Boolean isActive; //Opcional, o PrePersist da Entity garante true se vier null
