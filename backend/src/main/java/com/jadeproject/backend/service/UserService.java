@@ -2,6 +2,7 @@ package com.jadeproject.backend.service;
 
 import com.jadeproject.backend.dto.UserUpdateDTO;
 import com.jadeproject.backend.exception.DataConflictException;
+import com.jadeproject.backend.exception.ResourceNotFoundException;
 import com.jadeproject.backend.model.User;
 import com.jadeproject.backend.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -68,7 +69,7 @@ public class UserService {
     public User updateUser(Long id, UserUpdateDTO dto) {
         //Busca o usuário (se não achar, erro)
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
 
         //Atualiza campos APENAS se não forem nulos ou duplicados
         if (dto.getUsername() != null && !dto.getUsername().equals(user.getUsername())) {

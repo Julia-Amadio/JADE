@@ -2,6 +2,7 @@ package com.jadeproject.backend.service;
 
 import com.jadeproject.backend.dto.MonitorUpdateDTO;
 import com.jadeproject.backend.exception.DataConflictException;
+import com.jadeproject.backend.exception.ResourceNotFoundException;
 import com.jadeproject.backend.model.Monitor;
 import com.jadeproject.backend.model.User;
 import com.jadeproject.backend.repository.MonitorRepository;
@@ -34,7 +35,7 @@ public class MonitorService {
     @Transactional
     public Monitor createMonitor(Monitor monitor, Long userId) {
         //1. Validar se o usuário dono existe
-        User user = userService.findById(userId).orElseThrow(() -> new RuntimeException("Erro: Usuário não encontrado para ID " + userId));
+        User user = userService.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Erro: Usuário não encontrado para ID " + userId));
 
         //2. NOVA VALIDAÇÃO: usuário deve inserir intervalo mínimo de 30 segundos entre pings
         if (monitor.getIntervalSeconds() < MIN_INTERVAL_SECONDS) {
@@ -54,7 +55,7 @@ public class MonitorService {
         //5. Vincular monitor ao usuário
         monitor.setUser(user);
         monitor.setCreatedAt(OffsetDateTime.now(ZoneOffset.UTC));
-        log.info("Criando monitor '" + monitor.getName() + "' para o usuário " + user.getUsername());
+        log.info("Criando monitor '{}' para o usuário {}", monitor.getName(), user.getUsername());
         return monitorRepository.save(monitor);
     }
 
@@ -68,7 +69,7 @@ public class MonitorService {
         if (monitorRepository.existsById(id)) {
             monitorRepository.deleteById(id);
         } else {
-            throw new RuntimeException("Monitor não encontrado para exclusão.");
+            throw new ResourceNotFoundException("Monitor não encontrado para exclusão.");
         }
     }
 
@@ -76,7 +77,7 @@ public class MonitorService {
     @Transactional
     public Monitor updateMonitor(Long id, MonitorUpdateDTO dto) {
         Monitor monitor = monitorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Monitor não encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Monitor não encontrado."));
 
         Long userId = monitor.getUser().getId();
 
