@@ -1,6 +1,5 @@
 package com.jadeproject.backend.dto;
 
-import com.jadeproject.backend.model.Monitor;
 import lombok.Data;
 import java.time.OffsetDateTime;
 
