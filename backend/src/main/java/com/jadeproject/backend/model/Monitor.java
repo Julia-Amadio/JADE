@@ -2,22 +2,23 @@ package com.jadeproject.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "monitors")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Monitor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     //Vários monitores pertencem a um usuário
@@ -27,6 +28,7 @@ public class Monitor {
     * o Spring pode fazer: User -> Mostra Monitores -> Mostra User -> Mostra Monitores... (StackOverflowError).
     * Com @JsonIgnore, quando o spring for transformar Monitor em JSON, ele não mostra o objeto User inteiro dentro do corpo.*/
     @JsonIgnore
+    @ToString.Exclude
     private User user;
 
     @Column(nullable = false, length = 100)

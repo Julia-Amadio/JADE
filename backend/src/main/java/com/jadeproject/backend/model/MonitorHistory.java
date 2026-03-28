@@ -1,29 +1,30 @@
 package com.jadeproject.backend.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "monitor_history")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class MonitorHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     //Um monitor possui vários logs
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "monitor_id", nullable = false) //Mapeia a coluna FK 'monitor_id'
     @JsonIgnore
+    @ToString.Exclude
     private Monitor monitor;
 
     //Não temos 'nullable = false' pois um TimeOut, por exemplo, não retorna status code

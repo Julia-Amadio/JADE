@@ -4,37 +4,24 @@ package com.jadeproject.backend.model;
 //Origem de @Entity, @Table, @Id, @Column, @GeneratedValue, etc.
 import jakarta.persistence.*;
 
-//@Data gera getters e setters, toString(), equals() e hashCode() em tempo de compilação.
 //Evita linhas de código repetitivo (boilerplate)
-import lombok.Data;
-
-//Gerador de construtor vazio. Cria algo como public User() {} invisível
-/*O Hibernate (JPA) >exige< 1 construtor vazio.
-  Ele precisa instanciar o objeto vazio primeiro para depois preencher com os dados do BD.
-  Sem isso o código quebra ao tentar ler do banco.*/
-import lombok.NoArgsConstructor;
-
-//Gerador de construtor completo.
-/*Cria um construtor que aceita todos os campos como argumento
-  ex: new user(id, nome, email, senha...))
-  útil para testes ou para criar um objeto novo já preenchido em uma linha só.*/
-import lombok.AllArgsConstructor;
-
-//Para ignorar o campo passwordHash em logs
-import lombok.ToString;
+import lombok.*;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "users") //Garante que o Java procure a tabela 'users' (plural) e não 'User'
-@Data //O LOMBOK cria getters, setters, toString, equals e hashcode automaticamente
+@Getter
+@Setter
 @NoArgsConstructor //O LOMBOK cria o construtor vazio (obrigatório pro JPA)
 @AllArgsConstructor //O LOMBOK cria o construtor com todos os argumentos
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(nullable = false, unique = true, length = 50)

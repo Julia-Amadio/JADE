@@ -1,29 +1,30 @@
 package com.jadeproject.backend.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "incidents")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Incident {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     //Um monitor possui vários incidentes
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "monitor_id", nullable = false)
     @JsonIgnore
+    @ToString.Exclude
     private Monitor monitor;
 
     @Column(nullable = false, length = 150)
