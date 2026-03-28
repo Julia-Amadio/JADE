@@ -99,8 +99,9 @@ public class MonitorHistoryController {
             @RequestParam(defaultValue = "0") int page, // Começa na página 0 por padrão
             @RequestParam(defaultValue = "20") int size // Traz 20 itens por padrão
     ) {
-        checkMonitorOwner(monitorId); // Segurança
+        checkMonitorOwner(monitorId); //Segurança
 
+        size = Math.min(size, 100); //Garante que nunca passe de 100 itens por página
         //Cria o objeto de paginação
         Pageable pageable = PageRequest.of(page, size);
 
