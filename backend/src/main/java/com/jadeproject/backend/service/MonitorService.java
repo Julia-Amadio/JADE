@@ -118,4 +118,11 @@ public class MonitorService {
     public List<Monitor> getAllMonitors() {
         return monitorRepository.findAll();
     }
+
+    @Transactional(readOnly = true)
+    public Long findOwnerIdByMonitorId(Long monitorId) {
+        Monitor monitor = monitorRepository.findById(monitorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Monitor não encontrado"));
+        return monitor.getUser().getId(); //Dentro da transação do service
+    }
 }

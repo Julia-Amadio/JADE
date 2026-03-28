@@ -111,17 +111,13 @@ public class MonitorController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMonitor(@PathVariable Long id) {
         //1. Busca o monitor para saber quem é o dono
-        Monitor existingMonitor = monitorService.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Monitor não encontrado"));
+        Long ownerId = monitorService.findOwnerIdByMonitorId(id);
 
-        //2. Descobre o ID do dono
-        Long ownerId = existingMonitor.getUser().getId();
-
-        //3. Verifica permissão (se é o dono OU se é ADMIN)
+        //2. Verifica permissão (se é o dono OU se é ADMIN)
         //O método checkUserPermission já tem a lógica.
         checkUserPermission(ownerId);
 
-        //4. Se passou, deleta
+        //3. Se passou, deleta
         monitorService.deleteMonitor(id);
         return ResponseEntity.noContent().build();
     }
@@ -132,11 +128,7 @@ public class MonitorController {
                                                             @Valid @RequestBody MonitorUpdateDTO updateDto) {
         //PROBLEMA ANTERIOR: o update recebe ID do Monitor, não do Usuário.
         //Solução rápida: buscar o monitor para saber de quem ele é
-        Monitor existingMonitor = monitorService.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Monitor não encontrado"));
-
-        //Pega o ID do dono daquele monitor
-        Long ownerId = existingMonitor.getUser().getId();
+        Long ownerId = monitorService.findOwnerIdByMonitorId(id); //Já lança 404 se não existir
 
         //Verifica se o usuário logado é o dono desse monitor
         checkUserPermission(ownerId);
