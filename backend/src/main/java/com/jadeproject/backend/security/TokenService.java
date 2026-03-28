@@ -26,6 +26,7 @@ public class TokenService {
                     .withIssuer("JadeProject_API")
                     .withSubject(user.getEmail())
                     .withClaim("role", user.getRole()) //Guarda se é ADMIN ou USER
+                    .withClaim("userId", user.getId())
                     .withExpiresAt(genExpirationDate())
                     .sign(algorithm);
         } catch (JWTCreationException exception) {
