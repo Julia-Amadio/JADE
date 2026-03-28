@@ -84,11 +84,12 @@ public class MonitorScheduler {
     //Método auxiliar simples para testar a conexão (java puro)
     //DIFF: boolean para int
     private int pingUrl(String urlAddress) {
+        HttpURLConnection connection = null;
         try {
             URL url = URI.create(urlAddress).toURL();
 
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("HEAD"); //Não baixa o body
             connection.setConnectTimeout(3000); //Espera no máx 3s para conectar
             connection.setReadTimeout(3000);    //Espera no máx 3s para ler
 
@@ -99,6 +100,10 @@ public class MonitorScheduler {
             //Se der erro de DNS, timeout ou qualquer exceção, não tem código HTTP
             //Retorna 0 para indicar "sem resposta"
             return 0;
+        } finally {
+            if (connection != null) {
+                connection.disconnect(); //Garante fechamento sempre
+            }
         }
     }
 }
