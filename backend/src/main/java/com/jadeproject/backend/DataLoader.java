@@ -4,6 +4,7 @@ import com.jadeproject.backend.model.Monitor;
 import com.jadeproject.backend.model.User;
 import com.jadeproject.backend.service.MonitorService;
 import com.jadeproject.backend.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,13 +12,14 @@ import org.springframework.context.annotation.Configuration;
 import java.util.Optional;
 
 @Configuration
+@Slf4j
 public class DataLoader {
 
     @Bean
     CommandLineRunner initDatabase(UserService userService,
                                    MonitorService monitorService) {
         return args -> {
-            System.out.println("Iniciando carga de dados via Services...");
+            log.info("Iniciando carga de dados via Services...");
 
             //1. CRIAR USUÁRIO
             //Usa findByUsername para não tentar criar duplicado e tomar erro do Service
@@ -32,15 +34,15 @@ public class DataLoader {
                 newUser.setRole("ROLE_ADMIN");
 
                 user = userService.registerUser(newUser);
-                System.out.println("Usuário criado: " + user.getUsername());
+                log.info("Usuário criado: {}", user.getUsername());
             } else {
                 user = existingUser.get();
-                System.out.println("[ERRO] Usuário '" + user.getUsername() + "' já existe!");
+                log.info("[ERRO] Usuário '{}' já existe!", user.getUsername());
             }
 
             //2. VERIFICAR SE JÁ EXISTEM MONITORES (para não duplicar)
             if (monitorService.findAllByUserId(user.getId()).isEmpty()) {
-                System.out.println("Criando monitores de teste...");
+                log.info("Criando monitores de teste...");
 
                 createMonitor(monitorService, user, "Google Check", "https://google.com");
                 createMonitor(monitorService, user, "Fantoche - UP", "http://localhost:8080/fantoche/up");
@@ -48,12 +50,12 @@ public class DataLoader {
                 createMonitor(monitorService, user, "Fantoche - TIMEOUT", "http://localhost:8080/fantoche/slow");
                 createMonitor(monitorService, user, "Fantoche - CAOS", "http://localhost:8080/fantoche/random");
 
-                System.out.println("Todos os monitores de teste foram criados!");
+                log.info("Todos os monitores de teste foram criados!");
             } else {
-                System.out.println("Monitores já existem no banco. Pulando criação.");
+                log.info("Monitores já existem no banco. Pulando criação.");
             }
 
-            System.out.println("Carga de dados finalizada. O scheduler vai pegar esses dados em breve.");
+            log.info("Carga de dados finalizada. O scheduler vai pegar esses dados em breve.");
         };
     }
 
@@ -64,6 +66,6 @@ public class DataLoader {
         monitor.setUrl(url);
         monitor.setIntervalSeconds(60);
         service.createMonitor(monitor, user.getId());
-        System.out.println("   -> Monitor cadastrado: " + name);
+        log.info("   -> Monitor cadastrado: {}", name);
     }
 }
