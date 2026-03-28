@@ -6,8 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -78,9 +76,6 @@ public class MonitorScheduler {
                 * Se o código for 0 -> Salva "Timeout..."
                 * Se o código for 500 -> "Erro HTTP 500"*/
             }
-
-            monitor.setLastChecked(OffsetDateTime.now(ZoneOffset.UTC));
-            monitorRepository.save(monitor);
         }
 
         log.info("--------------- FIM DA VERIFICAÇÃO ---------------");

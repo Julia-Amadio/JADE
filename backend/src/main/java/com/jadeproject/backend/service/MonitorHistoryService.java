@@ -3,6 +3,7 @@ package com.jadeproject.backend.service;
 import com.jadeproject.backend.model.Monitor;
 import com.jadeproject.backend.model.MonitorHistory;
 import com.jadeproject.backend.repository.MonitorHistoryRepository;
+import com.jadeproject.backend.repository.MonitorRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,9 +20,12 @@ import java.time.ZoneOffset;
 public class MonitorHistoryService {
 
     private final MonitorHistoryRepository historyRepository;
+    private final MonitorRepository monitorRepository;
 
-    public MonitorHistoryService(MonitorHistoryRepository historyRepository) {
+    public MonitorHistoryService(MonitorHistoryRepository historyRepository,
+                                 MonitorRepository monitorRepository) {
         this.historyRepository = historyRepository;
+        this.monitorRepository = monitorRepository;
     }
 
     //Registra uma nova verificação (ping/http check) no banco
@@ -35,6 +39,9 @@ public class MonitorHistoryService {
         log.setIsSuccessful(isUp);
         log.setCheckedAt(OffsetDateTime.now(ZoneOffset.UTC));
         historyRepository.save(log);
+        //Atualiza last_checked atomicamente com o registro do log
+        monitor.setLastChecked(OffsetDateTime.now(ZoneOffset.UTC));
+        monitorRepository.save(monitor);
     }
 
     //Busca histórico recente para o dashboard
