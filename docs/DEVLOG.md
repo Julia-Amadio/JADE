@@ -422,7 +422,7 @@ O arquivo `application.properties` foi refatorado para suportar múltiplos ambie
 - **Transição suave:** se as variáveis da nuvem (`DB_URL`, `DB_USERNAME`, `DB_PASSWORD`) forem injetadas, o Spring conecta ao Neon. Se o projeto for clonado cru, o Spring assume automaticamente os valores padrão apontando para o contêiner Docker (`jdbc:postgresql://localhost:5433/jade_local_db`, usuário `tester_jade` e senha `tester_password`).
 
 
-# <br> 20/03 - Documentação da API com Swagger/OpenAPI e Melhorias de Observabilidade
+# <br> 20/03 - Documentação da API com Swagger/OpenAPI e melhorias de observabilidade ([4e3c20f](https://github.com/Julia-Amadio/JADE/commit/4e3c20fbdef2affd499cdbb46d3da1aa4e594efa))
 
 Para facilitar o consumo da API por futuros clientes (como o Frontend em React) e agilizar os testes manuais, foi implementada a documentação interativa automatizada utilizando o padrão OpenAPI (Swagger).
 
@@ -436,5 +436,188 @@ Como o sistema é protegido por RBAC através de JWT, é necessário "ensinar" o
 - **Classes de configuração:** criação dos arquivos `SwaggerConfig` (e `OpenApiConfig`) dentro do pacote `config`. Estas classes utilizam anotações como `@OpenAPIDefinition` e `@SecurityScheme` para definir os metadados globais da API (título, versão) e estabelecer o esquema de segurança do tipo HTTP Bearer.
 - **Blindagem visual das rotas:** adição da anotação `@SecurityRequirement(name = "bearerAuth")` em todos os Controllers e rotas específicas que exigem autenticação. Isso ativa o ícone de "cadeado" (🔒) na interface do Swagger, forçando o envio do token JWT no cabeçalho `Authorization` durante as requisições de teste, respeitando a lógica de *ownership* e privilégios de administrador.
 
-## 3. Aprimoramento no Tratamento Global de Exceções
+## 3. Aprimoramento no tratamento global de exceções
 O método que atua como *Catch-All* para erros 500 agora utiliza `log.error()`, registrando a rota exata onde a falha ocorreu e a *stack trace* padronizada no console. Isso previne a perda de logs em ambientes de produção e prepara o terreno para ferramentas futuras de monitoramento.
+
+---
+
+# <br> 27/02 - Correções de segurança, robustez e qualidade
+
+## 1. Correções no sistema de autenticação JWT
+
+### 1.1. Expiração do token corrigida para UTC ([b0f58ad](https://github.com/Julia-Amadio/JADE/commit/b0f58adfaa84dc031be1e40cec63d6170de3d591))
+O método `genExpirationDate()` no `TokenService` calculava a expiração do token
+usando `LocalDateTime.now()` combinado com `ZoneOffset.of("-03:00")` fixo.
+
+O problema: `LocalDateTime.now()` captura a hora local **do servidor**. Em
+ambiente de desenvolvimento (máquina em GMT-3), o resultado era correto. Em um
+servidor cloud em UTC — padrão de praticamente todos os provedores (AWS, Render,
+Railway) — `now()` retornaria a hora UTC e subtrair 3 horas do offset faria o
+token expirar daqui a 5 horas em vez de 2, sem nenhum erro visível.
+```java
+//antes
+return LocalDateTime.now().plusHours(2).toInstant(ZoneOffset.of("-03:00"));
+
+//depois
+return Instant.now().plus(2, ChronoUnit.HOURS);
+```
+
+`Instant.now()` opera diretamente em UTC sem envolver fuso horário local,
+garantindo comportamento idêntico em qualquer ambiente.
+
+### 1.2. Melhoria no método `recoverToken` ([630fec8](https://github.com/Julia-Amadio/JADE/commit/630fec887668fce85778ea40907edcd8f814eda9))
+O método usava `authHeader.replace("Bearer ", "")` para extrair o token JWT do
+header `Authorization`. O `replace` substitui **todas** as ocorrências da
+substring no texto — não apenas o prefixo. Além disso, o método não validava se
+o header de fato começava com `"Bearer "`, aceitando qualquer string como potencial
+token.
+```java
+private String recoverToken(HttpServletRequest request) {
+    var authHeader = request.getHeader("Authorization");
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
+    return authHeader.substring(7);
+}
+```
+
+### 1.3. Adição do `userId` ao payload do JWT ([833c44c](https://github.com/Julia-Amadio/JADE/commit/833c44c584a71a0e180ee1e5652ecdff6f806e30))
+O token JWT carregava apenas `email` e `role` como claims. O frontend, após o
+login, precisaria de uma chamada extra à API para descobrir o `id` do usuário,
+necessário para montar URLs como `/monitors/user/{userId}`. Adicionando o `userId`
+diretamente no payload via `.withClaim("userId", user.getId())`, o frontend já
+recebe essa informação junto com o token na resposta do login, sem roundtrip
+adicional.
+
+---
+
+## 2. Tratamento de erros aprimorado ([4e86ff6](https://github.com/Julia-Amadio/JADE/commit/4e86ff6f0bf17fbdcfb112988edf4c1650c7820d), [5a907dd](https://github.com/Julia-Amadio/JADE/commit/5a907dd825cc36eac2254785e7d0cdb3b8d8bcfd))
+
+Todos os casos de "registro não encontrado" nos services lançavam `RuntimeException`
+genérica. O `GlobalExceptionHandler` não tinha um handler específico para ela,
+então todas caíam no catch-all e retornavam `500 Internal Server Error`. Um
+monitor não encontrado retornava 500 em vez de 404, o que é semanticamente incorreto
+e dificulta o debug no frontend.
+
+Foram adicionados dois novos handlers ao `GlobalExceptionHandler`:
+- **`ResourceNotFoundException` (nova exceção customizada):** `404 Not Found`,
+  lançada quando um registro não existe no banco. Todas as chamadas
+  `.orElseThrow(() -> new RuntimeException(...))` nos services foram migradas para
+  ela.
+- **`NoResourceFoundException`:** `404 Not Found`, necessário porque o Spring
+  Boot 3+ lança essa exceção específica para rotas inexistentes, e ela não é
+  capturada pela `ResponseStatusException` como ocorria em versões anteriores do
+  framework.
+
+---
+
+## 3. Robustez do `MonitorScheduler`
+
+### 3.1. Atomização do `saveLog` com atualização do `last_checked` ([91d9fb9](https://github.com/Julia-Amadio/JADE/commit/91d9fb9ba6bea64de637dc20f2966486cc2f64af))
+O scheduler executava três operações separadas a cada ciclo de verificação:
+`historyService.saveLog(...)`, `incidentService.handleDownEvent(...)` e
+`monitorRepository.save(monitor)` para atualizar o `last_checked`. Cada uma abria
+e fechava sua própria transação independente.
+
+O problema: se `saveLog` funcionasse mas `monitorRepository.save` falhasse por
+qualquer razão, o `last_checked` não seria atualizado. O scheduler interpretaria
+o monitor como "nunca verificado" e o reprocessaria no próximo ciclo, gerando um
+registro duplicado no histórico sem que o monitor tivesse sido verificado
+novamente.
+
+`saveLog` passou a ser responsável por atualizar o `last_checked` dentro da
+mesma transação `@Transactional`, tornando o registro do log e a atualização do
+timestamp uma operação atômica — ou os dois acontecem, ou nenhum.
+
+### 3.2. Troca de GET por HEAD no `pingUrl` e garantia de fechamento de conexão ([498307c](https://github.com/Julia-Amadio/JADE/commit/498307c9cecb5ba99e7c9129e42ec831137abe51))
+O método `pingUrl` tinha dois problemas:
+
+- **Conexão nunca fechada:** `HttpURLConnection` não era fechado após o uso. Com o
+scheduler rodando a cada 10 segundos para múltiplos monitores, conexões TCP ficavam
+presas e se acumulavam, podendo esgotar o pool de conexões disponíveis do sistema
+operacional ao longo do tempo. Corrigido com bloco `finally` garantindo
+`connection.disconnect()` sempre.
+
+- **Request GET desnecessário:** o método baixava o corpo inteiro da resposta HTTP
+para verificar apenas se o serviço estava no ar. O método `HEAD` retorna apenas
+os headers (incluindo o status code) sem o body, reduzindo significativamente o
+tráfego de rede — especialmente relevante para monitores apontando para páginas
+HTML pesadas.
+
+> **Nota:** alguns servidores não respondem corretamente a `HEAD`, retornando
+> `405 Method Not Allowed`. Um refinamento futuro é adicionar fallback automático
+> para GET nesses casos.
+
+---
+
+## 4. Correção crítica nas entidades JPA ([1c3679f](https://github.com/Julia-Amadio/JADE/commit/1c3679f2929a4a64df3e57ae69a50f3e15ba8d8f))
+
+A anotação `@Data` do Lombok foi removida de todas as entidades JPA (`User`,
+`Monitor`, `MonitorHistory`, `Incident`) e substituída por anotações explícitas.
+O `@Data` é conveniente para classes simples, mas gera código incompatível com o
+funcionamento interno do Hibernate em dois pontos específicos:
+
+### 4.1. `equals()` e `hashCode()` instáveis após persistência
+O `@Data` gerava `equals/hashCode` baseados em todos os campos, incluindo o `id`.
+Antes de persistir, o `id` é `null` — dois objetos distintos não persistidos eram
+considerados iguais. Após o banco gerar o `id`, o `hashCode` mudava, tornando o
+objeto inencontrável em qualquer `Set` ou `HashMap` onde tivesse sido inserido
+antes da persistência. Corrigido com `@EqualsAndHashCode(onlyExplicitlyIncluded =
+true)` e `@EqualsAndHashCode.Include` no campo `@Id`.
+
+### 4.2. `toString()` disparando carregamento lazy
+O `toString()` gerado pelo `@Data` acessa todos os campos. Campos com
+`FetchType.LAZY` (como `Monitor.user`, `MonitorHistory.monitor` e
+`Incident.monitor`) seriam carregados pelo Hibernate no momento em que qualquer
+`log.info("monitor: {}", monitor)` fosse chamado. Fora de uma transação ativa
+(como no próprio `MonitorScheduler`, que roda fora do ciclo HTTP), isso lançaria
+`LazyInitializationException`. Corrigido com `@ToString.Exclude` em todos os
+relacionamentos lazy.
+
+> **Nota:** ambos os problemas não se manifestaram nos testes porque o Spring Boot mantém o
+> **Open Session in View (OSIV)** ativo por padrão, que segura a sessão do Hibernate
+> aberta durante toda a requisição HTTP, mascarando acessos lazy fora de transação.
+> O scheduler, por rodar em background sem ciclo HTTP, não tem essa proteção.
+
+---
+
+## 5. Migrações Flyway: V2 e V3 ([032a7cf](https://github.com/Julia-Amadio/JADE/commit/032a7cf925a8f446165b07f9ed91ef310efd1fb2))
+
+Com o Flyway integrado ao projeto desde 08/03, correções no banco passam agora
+a ser versionadas como migrações incrementais em vez de alterações manuais.
+
+### V2 — Correção de tipos de timezone (`V2__Fix_timezone_columns.sql`)
+O banco de produção no Neon foi criado manualmente antes da integração do Flyway,
+usando `timestamp without time zone` em todos os campos de data. Isso contradiz
+a decisão arquitetural documentada de usar `TIMESTAMPTZ` para garantir
+consistência entre ambientes. A migração converte todas as colunas via
+`ALTER COLUMN ... TYPE TIMESTAMPTZ USING ... AT TIME ZONE 'UTC'`.
+O banco Docker local sempre utilizou o tipo correto, pois nasceu com o Flyway
+ativo a partir do V1.
+### V3 — Índices de performance (`V3__Add_performance_indexes.sql`)
+A tabela `monitor_history` cresce continuamente e cada verificação de cada monitor
+gera uma linha. Sem índices, as queries fazem full table scan. Com 10 monitores
+verificando a cada 30 segundos, são ~29.000 linhas por dia. Foram adicionados:
+- **`monitor_history(monitor_id, checked_at DESC)`:** cobre a query de histórico
+  paginado e já entrega os resultados ordenados sem sort separado;
+- **`incidents(monitor_id, status)`:** cobre o `findByMonitorIdAndStatus` chamado
+  pelo scheduler a cada ciclo;
+- **`monitors(last_checked)`:** acelera a query do smart polling, que varre esta
+  coluna a cada 10 segundos.
+
+---
+
+## 6. Correção de lazy load nos controllers ([ba57297](https://github.com/Julia-Amadio/JADE/commit/ba57297b5d41d934178b8d92dc47b01bbbc83f91))
+
+Os métodos `deleteMonitor` e `updateMonitor` no `MonitorController` buscavam o
+monitor via `monitorService.findById(id)` e em seguida acessavam
+`existingMonitor.getUser().getId()` para verificar o ownership. O problema: o
+`findById` abre e fecha sua transação dentro do service. Quando o controller
+recebia o objeto `Monitor` de volta, a sessão JPA já havia sido encerrada. O
+acesso a `.getUser()` tentaria carregar o relacionamento lazy fora de uma transação
+ativa — situação mascarada pelo OSIV em requisições HTTP, mas estruturalmente
+incorreta.
+
+Foi criado o método `findOwnerIdByMonitorId` no `MonitorService`, anotado com
+`@Transactional(readOnly = true)`, que encapsula o `findById` e o acesso a
+`.getUser().getId()` dentro da mesma transação. O controller passa a chamar esse
+método e recebe diretamente o `Long ownerId`, sem nunca tocar no relacionamento
+lazy fora de um contexto transacional controlado.
