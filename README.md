@@ -2,7 +2,15 @@
 
 O JADE é uma aplicação de monitoramento de disponibilidade de serviços web (health checks). Seu objetivo é permitir o cadastro de URLs críticas e oferecer feedback imediato (status UP/DOWN), histórico de latência e gestão de incidentes.
 
-O backend está totalmente implementado e o frontend está em desenvolvimento utilizando React + Vite.
+O backend está sendo aperfeiçoado e o frontend está na fase inicial de desenvolvimento, já configurado utilizando React + Vite.
+
+---
+
+## Docs
+
+*   **[Architecture](https://github.com/Julia-Amadio/JADE/blob/main/docs/ARCHITECTURE.md):** documentação técnica detalhando a estrutura em camadas (MVC) do backend, organização de pacotes e decisões cruciais de design, como o controle transacional estrito e o fluxo da regra de negócios.
+*   **[Dev Log](https://github.com/Julia-Amadio/JADE/blob/main/docs/DEVLOG.md):** registro cronológico das decisões arquiteturais, evolução estrutural do banco de dados e histórico detalhado das implementações e correções.
+*   **[To Do:](https://github.com/Julia-Amadio/JADE/blob/main/docs/TODO.md)** *roadmap* do projeto contendo o mapeamento das próximas features, melhorias de segurança e resoluções de débitos técnicos priorizados.
 
 ---
 
@@ -13,7 +21,10 @@ O backend está totalmente implementado e o frontend está em desenvolvimento ut
 *   **Gestão de incidentes:** agrupa falhas consecutivas de forma inteligente em um único incidente, resolvendo-o automaticamente quando o serviço volta a operar.
 *   **Gerenciamento de usuários:** sistema seguro de registro e autenticação.
 *   **Controle de Acesso Baseado em Papéis (RBAC):** permissões diferenciadas para usuários comuns e administradores.
-*   **API REST:** API projetada para integração e comunicação com o frontend.
+*   **Segurança e autenticação:** sistema de login *stateless* utilizando **Tokens JWT** e Controle de Acesso Baseado em Papéis (RBAC - Admin vs User).
+*   **Motor de agendamento assíncrono (*scheduler*):** background job inteligente e otimizado que realiza as verificações de uptime de forma isolada do tráfego HTTP.
+*   **API REST robusta:** endpoints documentados, com suporte nativo a **paginação e ordenação**, validação rigorosa de DTOs e tratamento global de exceções. Projetada para integração e comunicação com o frontend.
+*   **Performance otimizada:** banco de dados estruturado com índices focados em leitura rápida e arquitetura que não depende de *Open Session in View* (OSIV), garantindo integridade transacional.
 
 ---
 
@@ -29,6 +40,8 @@ O backend está totalmente implementado e o frontend está em desenvolvimento ut
 | **Autenticação**        | [Spring Security](https://spring.io/projects/spring-security) + [JWT](https://jwt.io/)                                                            |
 | **Build tool**          | [Maven](https://maven.apache.org/)                                                                                                                |
 | **Qualidade de código** | [Lombok](https://projectlombok.org/)                                                                                                              |
+| **Documentação**        | [OpenAPI 3 (SpringDoc / Swagger UI)](https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui/3.0.2)                  |
+| **Infraestrutura**      | [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/) (ambiente local isolado)                                   |
 
 ---
 
@@ -109,6 +122,10 @@ Não é necessário ter o Maven instalado, usaremos o *Wrapper* incluído no pro
 4.  **Explore a API no Postman/Insomnia:**
 
     Assim que a aplicação iniciar (*porta 8080*), o script `DataLoader.java` injetará automaticamente um Usuário Admin e 4 Monitores "Fantoches". O motor de agendamento em background já começará a realizar os pings e gerar históricos de latência.
+
+5.  **Acesse a documentação interativa (Swagger UI):**
+
+    Com a aplicação rodando, abra o navegador e acesse `http://localhost:8080/swagger-ui/index.html`. Você poderá explorar todos os endpoints da API, ver os schemas (DTOs) e testar requisições autenticadas diretamente pela interface (utilizando o token JWT no botão *Authorize*).
 
 ### 2) Setup do frontend
 
